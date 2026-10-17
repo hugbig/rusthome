@@ -1,0 +1,605 @@
+{
+ "floors": [
+  {
+   "floor_id": "rdc",
+   "name": "RDC",
+   "level": 0
+  },
+  {
+   "floor_id": "etage",
+   "name": "Etage",
+   "level": 1
+  }
+ ],
+ "areas": [
+  {
+   "area_id": "ambiance_salon",
+   "name": "Ambiance Salon",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "buanderie",
+   "name": "Buanderie",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "cabine_douche",
+   "name": "Cabine douche",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "bureau",
+   "name": "Chambre/Bureau",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "cui",
+   "name": "Cuisine",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "living",
+   "name": "Living",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "salon",
+   "name": "Salon",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "bureau_etage",
+   "name": "Bureau étage",
+   "floor_id": "etage"
+  },
+  {
+   "area_id": "chambre_enfants",
+   "name": "Chambre Enfants",
+   "floor_id": "etage"
+  },
+  {
+   "area_id": "discotheque",
+   "name": "Discotheque",
+   "floor_id": "etage"
+  }
+ ],
+ "labels": [],
+ "devices": [
+  {
+   "id": "hue_salon",
+   "name": "Salon",
+   "area_id": "salon",
+   "manufacturer": "Signify"
+  },
+  {
+   "id": "hue_play",
+   "name": "Hue play gradient",
+   "area_id": "salon",
+   "manufacturer": "Signify"
+  },
+  {
+   "id": "z2m_radiateur",
+   "name": "Radiateur salon",
+   "area_id": "salon",
+   "manufacturer": "Zigbee2MQTT"
+  },
+  {
+   "id": "z2m_temp_salon",
+   "name": "Température Salon",
+   "area_id": "salon",
+   "manufacturer": "Zigbee2MQTT"
+  },
+  {
+   "id": "z2m_temp_chambre",
+   "name": "Température Chambre",
+   "area_id": "bureau",
+   "manufacturer": "Zigbee2MQTT"
+  },
+  {
+   "id": "z2m_temp_ext",
+   "name": "Température extérieur",
+   "area_id": null,
+   "manufacturer": "Zigbee2MQTT"
+  },
+  {
+   "id": "z2m_congel",
+   "name": "Porte congélateur",
+   "area_id": "cui",
+   "manufacturer": "Zigbee2MQTT"
+  },
+  {
+   "id": "z2m_linky",
+   "name": "Linky index",
+   "area_id": null,
+   "manufacturer": "Zigbee2MQTT"
+  },
+  {
+   "id": "z2m_heiman",
+   "name": "Heiman Siren",
+   "area_id": null,
+   "manufacturer": "Zigbee2MQTT"
+  },
+  {
+   "id": "z2m_sirene",
+   "name": "Sirène batterie",
+   "area_id": null,
+   "manufacturer": "Zigbee2MQTT"
+  },
+  {
+   "id": "cam_living",
+   "name": "Caméra salon personne",
+   "area_id": "living",
+   "manufacturer": "ONVIF"
+  },
+  {
+   "id": "frigate_chambre",
+   "name": "Chambre personne",
+   "area_id": "bureau",
+   "manufacturer": "Frigate"
+  },
+  {
+   "id": "netatmo",
+   "name": "Netatmo Smart Thermostat",
+   "area_id": "salon",
+   "manufacturer": "Netatmo"
+  },
+  {
+   "id": "dk_frigate",
+   "name": "frigate CPU",
+   "area_id": null,
+   "manufacturer": "Portainer"
+  },
+  {
+   "id": "dk_old",
+   "name": "ancien conteneur",
+   "area_id": null,
+   "manufacturer": "Portainer"
+  }
+ ],
+ "entities": [
+  {
+   "id": "fx000",
+   "entity_id": "alarm_control_panel.alarmo",
+   "platform": "alarmo",
+   "device_id": null,
+   "unique_id": "alarmo-0"
+  },
+  {
+   "id": "fx001",
+   "entity_id": "input_boolean.presence_a_la_maison",
+   "platform": "input_boolean",
+   "device_id": null,
+   "unique_id": "input_boolean-1"
+  },
+  {
+   "id": "fx002",
+   "entity_id": "input_text.lecteur_dernier_badge",
+   "platform": "input_text",
+   "device_id": null,
+   "unique_id": "input_text-2"
+  },
+  {
+   "id": "fx003",
+   "entity_id": "person.hugo",
+   "platform": "person",
+   "device_id": null,
+   "unique_id": "person-3"
+  },
+  {
+   "id": "fx004",
+   "entity_id": "light.salon",
+   "platform": "hue",
+   "device_id": "hue_salon",
+   "unique_id": "hue-4"
+  },
+  {
+   "id": "fx005",
+   "entity_id": "light.hue_play_gradient",
+   "platform": "hue",
+   "device_id": "hue_play",
+   "unique_id": "hue-5"
+  },
+  {
+   "id": "fx006",
+   "entity_id": "switch.radiateur_salon",
+   "platform": "mqtt",
+   "device_id": "z2m_radiateur",
+   "unique_id": "mqtt-6"
+  },
+  {
+   "id": "fx007",
+   "entity_id": "sensor.radiateur_salon_power",
+   "platform": "mqtt",
+   "device_id": "z2m_radiateur",
+   "unique_id": "mqtt-7"
+  },
+  {
+   "id": "fx008",
+   "entity_id": "sensor.temperature_salon_temperature",
+   "platform": "mqtt",
+   "device_id": "z2m_temp_salon",
+   "unique_id": "mqtt-8"
+  },
+  {
+   "id": "fx009",
+   "entity_id": "sensor.temperature_chambre_temperature",
+   "platform": "mqtt",
+   "device_id": "z2m_temp_chambre",
+   "unique_id": "mqtt-9"
+  },
+  {
+   "id": "fx010",
+   "entity_id": "sensor.temperature_exterieur_temperature",
+   "platform": "mqtt",
+   "device_id": "z2m_temp_ext",
+   "unique_id": "mqtt-10"
+  },
+  {
+   "id": "fx011",
+   "entity_id": "binary_sensor.porte_congelateur_contact",
+   "platform": "mqtt",
+   "device_id": "z2m_congel",
+   "unique_id": "mqtt-11"
+  },
+  {
+   "id": "fx012",
+   "entity_id": "sensor.z_linky_east",
+   "platform": "mqtt",
+   "device_id": "z2m_linky",
+   "unique_id": "mqtt-12"
+  },
+  {
+   "id": "fx013",
+   "entity_id": "siren.heiman_siren",
+   "platform": "mqtt",
+   "device_id": "z2m_heiman",
+   "unique_id": "mqtt-13"
+  },
+  {
+   "id": "fx014",
+   "entity_id": "sensor.0xa4c13860c082643c_battpercentage",
+   "platform": "mqtt",
+   "device_id": "z2m_sirene",
+   "unique_id": "mqtt-14"
+  },
+  {
+   "id": "fx015",
+   "entity_id": "binary_sensor.living_camera_living_person_detection",
+   "platform": "onvif",
+   "device_id": "cam_living",
+   "unique_id": "onvif-15"
+  },
+  {
+   "id": "fx016",
+   "entity_id": "binary_sensor.chambre_person_occupancy",
+   "platform": "frigate",
+   "device_id": "frigate_chambre",
+   "unique_id": "frigate-16"
+  },
+  {
+   "id": "fx017",
+   "entity_id": "climate.netatmo_smart_thermostat",
+   "platform": "homekit_controller",
+   "device_id": "netatmo",
+   "unique_id": "homekit_controller-17"
+  },
+  {
+   "id": "fx018",
+   "entity_id": "weather.bagneux",
+   "platform": "meteo_france",
+   "device_id": null,
+   "unique_id": "meteo_france-18"
+  },
+  {
+   "id": "fx019",
+   "entity_id": "sensor.frigate_cpu",
+   "platform": "portainer",
+   "device_id": "dk_frigate",
+   "unique_id": "portainer-19"
+  },
+  {
+   "id": "fx020",
+   "entity_id": "sensor.562c5fc3f366_frigate_cpu",
+   "platform": "portainer",
+   "device_id": "dk_old",
+   "unique_id": "portainer-20"
+  },
+  {
+   "id": "fx021",
+   "entity_id": "media_player.emby_chrome_windows",
+   "platform": "emby",
+   "device_id": null,
+   "unique_id": "emby-21"
+  }
+ ],
+ "states": [
+  {
+   "entity_id": "alarm_control_panel.alarmo",
+   "state": "disarmed",
+   "attributes": {
+    "friendly_name": "Alarmo"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx0"
+   }
+  },
+  {
+   "entity_id": "input_boolean.presence_a_la_maison",
+   "state": "on",
+   "attributes": {
+    "friendly_name": "Présence à la maison"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx1"
+   }
+  },
+  {
+   "entity_id": "input_text.lecteur_dernier_badge",
+   "state": "Hugo est rentré à 12:22",
+   "attributes": {
+    "friendly_name": "lecteur_dernier_badge"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx2"
+   }
+  },
+  {
+   "entity_id": "person.hugo",
+   "state": "home",
+   "attributes": {
+    "friendly_name": "Hugo"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx3"
+   }
+  },
+  {
+   "entity_id": "light.salon",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "Salon",
+    "brightness": null
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx4"
+   }
+  },
+  {
+   "entity_id": "light.hue_play_gradient",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "Hue play gradient"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx5"
+   }
+  },
+  {
+   "entity_id": "switch.radiateur_salon",
+   "state": "on",
+   "attributes": {
+    "friendly_name": "Radiateur salon"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx6"
+   }
+  },
+  {
+   "entity_id": "sensor.radiateur_salon_power",
+   "state": "812.4",
+   "attributes": {
+    "friendly_name": "Radiateur salon Puissance",
+    "unit_of_measurement": "W",
+    "device_class": "power",
+    "state_class": "measurement"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx7"
+   }
+  },
+  {
+   "entity_id": "sensor.temperature_salon_temperature",
+   "state": "20.6",
+   "attributes": {
+    "friendly_name": "Température Salon",
+    "unit_of_measurement": "°C",
+    "device_class": "temperature"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx8"
+   }
+  },
+  {
+   "entity_id": "sensor.temperature_chambre_temperature",
+   "state": "19.1",
+   "attributes": {
+    "friendly_name": "Température Chambre",
+    "unit_of_measurement": "°C",
+    "device_class": "temperature"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx9"
+   }
+  },
+  {
+   "entity_id": "sensor.temperature_exterieur_temperature",
+   "state": "11.8",
+   "attributes": {
+    "friendly_name": "Température extérieur",
+    "unit_of_measurement": "°C",
+    "device_class": "temperature"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx10"
+   }
+  },
+  {
+   "entity_id": "binary_sensor.porte_congelateur_contact",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "Porte congélateur",
+    "device_class": "door"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx11"
+   }
+  },
+  {
+   "entity_id": "sensor.z_linky_east",
+   "state": "48213.7",
+   "attributes": {
+    "friendly_name": "Linky index",
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx12"
+   }
+  },
+  {
+   "entity_id": "siren.heiman_siren",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "Heiman Siren"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx13"
+   }
+  },
+  {
+   "entity_id": "sensor.0xa4c13860c082643c_battpercentage",
+   "state": "0",
+   "attributes": {
+    "friendly_name": "Sirène batterie",
+    "unit_of_measurement": "%",
+    "device_class": "battery"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx14"
+   }
+  },
+  {
+   "entity_id": "binary_sensor.living_camera_living_person_detection",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "Caméra salon personne",
+    "device_class": "occupancy"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx15"
+   }
+  },
+  {
+   "entity_id": "binary_sensor.chambre_person_occupancy",
+   "state": "off",
+   "attributes": {
+    "friendly_name": "Chambre personne",
+    "device_class": "occupancy"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx16"
+   }
+  },
+  {
+   "entity_id": "climate.netatmo_smart_thermostat",
+   "state": "heat",
+   "attributes": {
+    "friendly_name": "Netatmo Smart Thermostat",
+    "current_temperature": 20.4,
+    "temperature": 20.5
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx17"
+   }
+  },
+  {
+   "entity_id": "weather.bagneux",
+   "state": "partlycloudy",
+   "attributes": {
+    "friendly_name": "Bagneux",
+    "temperature": 14.5,
+    "humidity": 71
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx18"
+   }
+  },
+  {
+   "entity_id": "sensor.frigate_cpu",
+   "state": "12.3",
+   "attributes": {
+    "friendly_name": "frigate CPU",
+    "unit_of_measurement": "%"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx19"
+   }
+  },
+  {
+   "entity_id": "sensor.562c5fc3f366_frigate_cpu",
+   "state": "unavailable",
+   "attributes": {
+    "friendly_name": "ancien conteneur"
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx20"
+   }
+  },
+  {
+   "entity_id": "media_player.emby_chrome_windows",
+   "state": "unavailable",
+   "attributes": {
+    "friendly_name": "Emby Chrome Windows",
+    "restored": true
+   },
+   "last_changed": "2026-10-17T10:00:00+00:00",
+   "last_updated": "2026-10-17T10:00:00+00:00",
+   "context": {
+    "id": "ctx21"
+   }
+  }
+ ]
+}

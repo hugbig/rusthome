@@ -1,0 +1,66 @@
+{
+ "floors": [
+  {
+   "floor_id": "rdc",
+   "name": "RDC",
+   "level": 0
+  },
+  {
+   "floor_id": "etage",
+   "name": "Etage",
+   "level": 1
+  }
+ ],
+ "areas": [
+  {
+   "area_id": "ambiance_salon",
+   "name": "Ambiance Salon",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "buanderie",
+   "name": "Buanderie",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "cabine_douche",
+   "name": "Cabine douche",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "bureau",
+   "name": "Chambre/Bureau",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "cui",
+   "name": "Cuisine",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "living",
+   "name": "Living",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "salon",
+   "name": "Salon",
+   "floor_id": "rdc"
+  },
+  {
+   "area_id": "bureau_etage",
+   "name": "Bureau étage",
+   "floor_id": "etage"
+  },
+  {
+   "area_id": "chambre_enfants",
+   "name": "Chambre Enfants",
+   "floor_id": "etage"
+  },
+  {
+   "area_id": "discotheque",
+   "name": "Discotheque",
+   "floor_id": "etage"
+  }
+ ]
+}

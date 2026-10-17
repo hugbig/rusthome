@@ -1,0 +1,71 @@
+{
+ "zigbee2mqtt/Prise meuble livng": {
+  "auto_off": null,
+  "button_lock": null,
+  "consumer_connected": null,
+  "current": null,
+  "device_temperature": 21,
+  "energy": 17.13,
+  "led_disabled_night": null,
+  "linkquality": 239,
+  "overload_protection": null,
+  "power": 0,
+  "power_outage_memory": null,
+  "state": "OFF",
+  "update": {
+   "installed_version": 45,
+   "latest_release_notes": null,
+   "latest_source": "https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/images/Lumi/20240719174937_OTA_lumi.plug.maeu01_0.0.0_0045_20240719_958E71.ota",
+   "latest_version": 45,
+   "state": "idle"
+  },
+  "update_available": false,
+  "voltage": null
+ },
+ "zigbee2mqtt/Radiateur salon": {
+  "auto_off": null,
+  "button_lock": null,
+  "consumer_connected": null,
+  "current": null,
+  "device_temperature": 21,
+  "energy": 221.21,
+  "led_disabled_night": null,
+  "linkquality": 255,
+  "overload_protection": null,
+  "power": 0,
+  "power_outage_memory": null,
+  "state": "OFF",
+  "update": {
+   "installed_version": 45,
+   "latest_release_notes": null,
+   "latest_source": "https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/images/Lumi/20240719174937_OTA_lumi.plug.maeu01_0.0.0_0045_20240719_958E71.ota",
+   "latest_version": 45,
+   "state": "idle"
+  },
+  "update_available": false,
+  "voltage": null
+ },
+ "zigbee2mqtt/Prise lampadaire": {
+  "auto_off": null,
+  "button_lock": null,
+  "consumer_connected": null,
+  "current": null,
+  "device_temperature": 19,
+  "energy": 12.07,
+  "led_disabled_night": null,
+  "linkquality": 215,
+  "overload_protection": null,
+  "power": 0,
+  "power_outage_memory": null,
+  "state": "OFF",
+  "update": {
+   "installed_version": 45,
+   "latest_release_notes": null,
+   "latest_source": "https://raw.githubusercontent.com/Koenkk/zigbee-OTA/master/images/Lumi/20240719174937_OTA_lumi.plug.maeu01_0.0.0_0045_20240719_958E71.ota",
+   "latest_version": 45,
+   "state": "idle"
+  },
+  "update_available": false,
+  "voltage": null
+ }
+}

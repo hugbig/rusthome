@@ -1,0 +1,18 @@
+# Exemple de déploiement sur l'hôte Docker 192.168.1.25, derrière SWAG + Authelia
+# (spec §11, décision D1). Mosquitto et Zigbee2MQTT rejoindront cette stack en P1.
+name: rusthome
+services:
+  rusthome:
+    image: rusthome:latest
+    restart: unless-stopped
+    env_file: .env          # RUSTHOME_AUTH=oidc, RUSTHOME_OIDC_*, HA_URL/HA_TOKEN… (cf. docs/authelia.md)
+    environment:
+      RUSTHOME_PUBLIC_URL: https://maison.example.org
+    volumes:
+      - rusthome-data:/data
+    networks: [proxy]       # réseau partagé avec SWAG ; aucun port publié directement
+volumes:
+  rusthome-data:
+networks:
+  proxy:
+    external: true

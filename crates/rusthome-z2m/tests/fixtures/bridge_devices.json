@@ -1,0 +1,3805 @@
+[
+ {
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genTime",
+      "genOta"
+     ],
+     "output": [
+      "genPowerCfg",
+      "genPollCtrl",
+      "ssIasZone"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   },
+   "242": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": [
+      "greenPower"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Coordinator",
+  "ieee_address": "0x00212effff07db95",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "network_address": 0,
+  "supported": true,
+  "type": "Coordinator"
+ },
+ {
+  "date_code": "01-12-2021",
+  "definition": {
+   "description": "Smart wall switch H1 EU (no neutral, double rocker)",
+   "exposes": [
+    {
+     "endpoint": "left",
+     "features": [
+      {
+       "access": 7,
+       "description": "On/off state of the switch",
+       "endpoint": "left",
+       "label": "State",
+       "name": "state",
+       "property": "state_left",
+       "type": "binary",
+       "value_off": "OFF",
+       "value_on": "ON",
+       "value_toggle": "TOGGLE"
+      }
+     ],
+     "type": "switch"
+    },
+    {
+     "endpoint": "right",
+     "features": [
+      {
+       "access": 7,
+       "description": "On/off state of the switch",
+       "endpoint": "right",
+       "label": "State",
+       "name": "state",
+       "property": "state_right",
+       "type": "binary",
+       "value_off": "OFF",
+       "value_on": "ON",
+       "value_toggle": "TOGGLE"
+      }
+     ],
+     "type": "switch"
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Enable/disable the power outage memory, this recovers the on/off mode after power failure",
+     "label": "Power outage memory",
+     "name": "power_outage_memory",
+     "property": "power_outage_memory",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "After turn on, the indicator light turns on while switch is off, and vice versa",
+     "label": "Flip indicator light",
+     "name": "flip_indicator_light",
+     "property": "flip_indicator_light",
+     "type": "binary",
+     "value_off": "OFF",
+     "value_on": "ON"
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Enable/disable the LED at night",
+     "label": "LED disabled night",
+     "name": "led_disabled_night",
+     "property": "led_disabled_night",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Number of power outages (since last pairing)",
+     "label": "Power outage count",
+     "name": "power_outage_count",
+     "property": "power_outage_count",
+     "type": "numeric"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Temperature of the device",
+     "label": "Device temperature",
+     "name": "device_temperature",
+     "property": "device_temperature",
+     "type": "numeric",
+     "unit": "°C"
+    },
+    {
+     "access": 7,
+     "description": "Decoupled mode for left button",
+     "endpoint": "left",
+     "label": "Operation mode",
+     "name": "operation_mode",
+     "property": "operation_mode_left",
+     "type": "enum",
+     "values": [
+      "control_relay",
+      "decoupled"
+     ]
+    },
+    {
+     "access": 7,
+     "description": "Decoupled mode for right button",
+     "endpoint": "right",
+     "label": "Operation mode",
+     "name": "operation_mode",
+     "property": "operation_mode_right",
+     "type": "enum",
+     "values": [
+      "control_relay",
+      "decoupled"
+     ]
+    },
+    {
+     "access": 7,
+     "description": "Anti flicker mode can be used to solve blinking issues of some lights. Quick mode makes the device respond faster.",
+     "label": "Mode switch",
+     "name": "mode_switch",
+     "property": "mode_switch",
+     "type": "enum",
+     "values": [
+      "anti_flicker_mode",
+      "quick_mode"
+     ]
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Triggered action (e.g. a button click)",
+     "label": "Action",
+     "name": "action",
+     "property": "action",
+     "type": "enum",
+     "values": [
+      "single_left",
+      "double_left",
+      "single_right",
+      "double_right",
+      "single_both",
+      "double_both"
+     ]
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "WS-EUK02",
+   "options": [
+    {
+     "access": 2,
+     "description": "Calibrates the device_temperature value (absolute offset), takes into effect on next report of device.",
+     "label": "Device temperature calibration",
+     "name": "device_temperature_calibration",
+     "property": "device_temperature_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "State actions will also be published as 'action' when true (default false).",
+     "label": "State action",
+     "name": "state_action",
+     "property": "state_action",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    }
+   ],
+   "source": "native",
+   "supports_ota": false,
+   "vendor": "Aqara",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genDeviceTempCfg",
+      "genIdentify",
+      "genGroups",
+      "genScenes",
+      "genOnOff",
+      "genAlarms"
+     ],
+     "output": [
+      "genTime",
+      "genOta"
+     ]
+    },
+    "configured_reportings": [],
+    "name": "left",
+    "scenes": []
+   },
+   "2": {
+    "bindings": [],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genIdentify",
+      "genGroups",
+      "genScenes",
+      "genOnOff"
+     ],
+     "output": []
+    },
+    "configured_reportings": [],
+    "name": "right",
+    "scenes": []
+   },
+   "242": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": [
+      "greenPower"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   },
+   "41": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": []
+    },
+    "configured_reportings": [],
+    "scenes": []
+   },
+   "42": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": []
+    },
+    "configured_reportings": [],
+    "scenes": []
+   },
+   "51": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": []
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Interrupteur Living",
+  "ieee_address": "0x54ef4410002a0654",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "LUMI",
+  "model_id": "lumi.switch.l2aeu1",
+  "network_address": 15563,
+  "power_source": "Mains (single phase)",
+  "supported": true,
+  "type": "EndDevice"
+ },
+ {
+  "date_code": "07-19-2024",
+  "definition": {
+   "description": "Smart plug EU",
+   "exposes": [
+    {
+     "features": [
+      {
+       "access": 7,
+       "description": "On/off state of the switch",
+       "label": "State",
+       "name": "state",
+       "property": "state",
+       "type": "binary",
+       "value_off": "OFF",
+       "value_on": "ON",
+       "value_toggle": "TOGGLE"
+      }
+     ],
+     "type": "switch"
+    },
+    {
+     "access": 1,
+     "description": "Instantaneous measured power",
+     "label": "Power",
+     "name": "power",
+     "property": "power",
+     "type": "numeric",
+     "unit": "W"
+    },
+    {
+     "access": 1,
+     "description": "Sum of consumed energy",
+     "label": "Energy",
+     "name": "energy",
+     "property": "energy",
+     "type": "numeric",
+     "unit": "kWh"
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Enable/disable the power outage memory, this recovers the on/off mode after power failure",
+     "label": "Power outage memory",
+     "name": "power_outage_memory",
+     "property": "power_outage_memory",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 1,
+     "description": "Measured electrical potential value",
+     "label": "Voltage",
+     "name": "voltage",
+     "property": "voltage",
+     "type": "numeric",
+     "unit": "V"
+    },
+    {
+     "access": 1,
+     "description": "Instantaneous measured electrical current",
+     "label": "Current",
+     "name": "current",
+     "property": "current",
+     "type": "numeric",
+     "unit": "A"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Device temperature (polled every 30 min)",
+     "label": "Device temperature",
+     "name": "device_temperature",
+     "property": "device_temperature",
+     "type": "numeric",
+     "unit": "°C"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Indicates whether a plug is physically attached. Device does not have to pull power or even be connected electrically (state of this binary switch can be ON even if main power switch is OFF)",
+     "label": "Consumer connected",
+     "name": "consumer_connected",
+     "property": "consumer_connected",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Enable/disable the LED at night",
+     "label": "LED disabled night",
+     "name": "led_disabled_night",
+     "property": "led_disabled_night",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Maximum allowed load, turns off if exceeded",
+     "label": "Overload protection",
+     "name": "overload_protection",
+     "property": "overload_protection",
+     "type": "numeric",
+     "unit": "W",
+     "value_max": 2300,
+     "value_min": 100
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Turn the device automatically off when attached device consumes less than 2W for 20 minutes",
+     "label": "Auto OFF",
+     "name": "auto_off",
+     "property": "auto_off",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Disables the physical switch button",
+     "label": "Button lock",
+     "name": "button_lock",
+     "property": "button_lock",
+     "type": "binary",
+     "value_off": "OFF",
+     "value_on": "ON"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "SP-EUC01",
+   "options": [
+    {
+     "access": 2,
+     "description": "Calibrates the power value (percentual offset), takes into effect on next report of device.",
+     "label": "Power calibration",
+     "name": "power_calibration",
+     "property": "power_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for power, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Power precision",
+     "name": "power_precision",
+     "property": "power_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the energy value (percentual offset), takes into effect on next report of device.",
+     "label": "Energy calibration",
+     "name": "energy_calibration",
+     "property": "energy_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for energy, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Energy precision",
+     "name": "energy_precision",
+     "property": "energy_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the voltage value (percentual offset), takes into effect on next report of device.",
+     "label": "Voltage calibration",
+     "name": "voltage_calibration",
+     "property": "voltage_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for voltage, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Voltage precision",
+     "name": "voltage_precision",
+     "property": "voltage_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the current value (percentual offset), takes into effect on next report of device.",
+     "label": "Current calibration",
+     "name": "current_calibration",
+     "property": "current_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for current, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Current precision",
+     "name": "current_precision",
+     "property": "current_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the device_temperature value (absolute offset), takes into effect on next report of device.",
+     "label": "Device temperature calibration",
+     "name": "device_temperature_calibration",
+     "property": "device_temperature_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "State actions will also be published as 'action' when true (default false).",
+     "label": "State action",
+     "name": "state_action",
+     "property": "state_action",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    }
+   ],
+   "source": "native",
+   "supports_ota": true,
+   "vendor": "Aqara",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [
+     {
+      "cluster": "genOnOff",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     },
+     {
+      "cluster": "haElectricalMeasurement",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     },
+     {
+      "cluster": "seMetering",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     }
+    ],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genDeviceTempCfg",
+      "genIdentify",
+      "genGroups",
+      "genScenes",
+      "genOnOff",
+      "genAlarms",
+      "seMetering",
+      "haElectricalMeasurement"
+     ],
+     "output": [
+      "genTime",
+      "genOta"
+     ]
+    },
+    "configured_reportings": [
+     {
+      "attribute": "onOff",
+      "cluster": "genOnOff",
+      "maximum_report_interval": 3600,
+      "minimum_report_interval": 0,
+      "reportable_change": 0
+     },
+     {
+      "attribute": "currentSummDelivered",
+      "cluster": "seMetering",
+      "maximum_report_interval": 3600,
+      "minimum_report_interval": 5,
+      "reportable_change": 0
+     },
+     {
+      "attribute": "onOff",
+      "cluster": "genOnOff",
+      "maximum_report_interval": 3600,
+      "minimum_report_interval": 0,
+      "reportable_change": 0
+     },
+     {
+      "attribute": "currentSummDelivered",
+      "cluster": "seMetering",
+      "maximum_report_interval": 3600,
+      "minimum_report_interval": 5,
+      "reportable_change": 0
+     }
+    ],
+    "scenes": []
+   },
+   "242": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": [
+      "greenPower"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Prise meuble livng",
+  "ieee_address": "0x54ef4410003a66f3",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "LUMI",
+  "model_id": "lumi.plug.maeu01",
+  "network_address": 164,
+  "power_source": "Mains (single phase)",
+  "supported": true,
+  "type": "Router"
+ },
+ {
+  "date_code": "07-19-2024",
+  "definition": {
+   "description": "Smart plug EU",
+   "exposes": [
+    {
+     "features": [
+      {
+       "access": 7,
+       "description": "On/off state of the switch",
+       "label": "State",
+       "name": "state",
+       "property": "state",
+       "type": "binary",
+       "value_off": "OFF",
+       "value_on": "ON",
+       "value_toggle": "TOGGLE"
+      }
+     ],
+     "type": "switch"
+    },
+    {
+     "access": 1,
+     "description": "Instantaneous measured power",
+     "label": "Power",
+     "name": "power",
+     "property": "power",
+     "type": "numeric",
+     "unit": "W"
+    },
+    {
+     "access": 1,
+     "description": "Sum of consumed energy",
+     "label": "Energy",
+     "name": "energy",
+     "property": "energy",
+     "type": "numeric",
+     "unit": "kWh"
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Enable/disable the power outage memory, this recovers the on/off mode after power failure",
+     "label": "Power outage memory",
+     "name": "power_outage_memory",
+     "property": "power_outage_memory",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 1,
+     "description": "Measured electrical potential value",
+     "label": "Voltage",
+     "name": "voltage",
+     "property": "voltage",
+     "type": "numeric",
+     "unit": "V"
+    },
+    {
+     "access": 1,
+     "description": "Instantaneous measured electrical current",
+     "label": "Current",
+     "name": "current",
+     "property": "current",
+     "type": "numeric",
+     "unit": "A"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Device temperature (polled every 30 min)",
+     "label": "Device temperature",
+     "name": "device_temperature",
+     "property": "device_temperature",
+     "type": "numeric",
+     "unit": "°C"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Indicates whether a plug is physically attached. Device does not have to pull power or even be connected electrically (state of this binary switch can be ON even if main power switch is OFF)",
+     "label": "Consumer connected",
+     "name": "consumer_connected",
+     "property": "consumer_connected",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Enable/disable the LED at night",
+     "label": "LED disabled night",
+     "name": "led_disabled_night",
+     "property": "led_disabled_night",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Maximum allowed load, turns off if exceeded",
+     "label": "Overload protection",
+     "name": "overload_protection",
+     "property": "overload_protection",
+     "type": "numeric",
+     "unit": "W",
+     "value_max": 2300,
+     "value_min": 100
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Turn the device automatically off when attached device consumes less than 2W for 20 minutes",
+     "label": "Auto OFF",
+     "name": "auto_off",
+     "property": "auto_off",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Disables the physical switch button",
+     "label": "Button lock",
+     "name": "button_lock",
+     "property": "button_lock",
+     "type": "binary",
+     "value_off": "OFF",
+     "value_on": "ON"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "SP-EUC01",
+   "options": [
+    {
+     "access": 2,
+     "description": "Calibrates the power value (percentual offset), takes into effect on next report of device.",
+     "label": "Power calibration",
+     "name": "power_calibration",
+     "property": "power_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for power, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Power precision",
+     "name": "power_precision",
+     "property": "power_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the energy value (percentual offset), takes into effect on next report of device.",
+     "label": "Energy calibration",
+     "name": "energy_calibration",
+     "property": "energy_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for energy, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Energy precision",
+     "name": "energy_precision",
+     "property": "energy_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the voltage value (percentual offset), takes into effect on next report of device.",
+     "label": "Voltage calibration",
+     "name": "voltage_calibration",
+     "property": "voltage_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for voltage, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Voltage precision",
+     "name": "voltage_precision",
+     "property": "voltage_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the current value (percentual offset), takes into effect on next report of device.",
+     "label": "Current calibration",
+     "name": "current_calibration",
+     "property": "current_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for current, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Current precision",
+     "name": "current_precision",
+     "property": "current_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the device_temperature value (absolute offset), takes into effect on next report of device.",
+     "label": "Device temperature calibration",
+     "name": "device_temperature_calibration",
+     "property": "device_temperature_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "State actions will also be published as 'action' when true (default false).",
+     "label": "State action",
+     "name": "state_action",
+     "property": "state_action",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    }
+   ],
+   "source": "native",
+   "supports_ota": true,
+   "vendor": "Aqara",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [
+     {
+      "cluster": "genOnOff",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     },
+     {
+      "cluster": "haElectricalMeasurement",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     },
+     {
+      "cluster": "seMetering",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     }
+    ],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genDeviceTempCfg",
+      "genIdentify",
+      "genGroups",
+      "genScenes",
+      "genOnOff",
+      "genAlarms",
+      "seMetering",
+      "haElectricalMeasurement"
+     ],
+     "output": [
+      "genTime",
+      "genOta"
+     ]
+    },
+    "configured_reportings": [
+     {
+      "attribute": "onOff",
+      "cluster": "genOnOff",
+      "maximum_report_interval": 3600,
+      "minimum_report_interval": 0,
+      "reportable_change": 0
+     },
+     {
+      "attribute": "currentSummDelivered",
+      "cluster": "seMetering",
+      "maximum_report_interval": 3600,
+      "minimum_report_interval": 5,
+      "reportable_change": 0
+     },
+     {
+      "attribute": "onOff",
+      "cluster": "genOnOff",
+      "maximum_report_interval": 3600,
+      "minimum_report_interval": 0,
+      "reportable_change": 0
+     },
+     {
+      "attribute": "currentSummDelivered",
+      "cluster": "seMetering",
+      "maximum_report_interval": 3600,
+      "minimum_report_interval": 5,
+      "reportable_change": 0
+     }
+    ],
+    "scenes": []
+   },
+   "242": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": [
+      "greenPower"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Prise lampadaire",
+  "ieee_address": "0x54ef4410003a6d55",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "LUMI",
+  "model_id": "lumi.plug.maeu01",
+  "network_address": 43610,
+  "power_source": "Mains (single phase)",
+  "supported": true,
+  "type": "Router"
+ },
+ {
+  "date_code": "07-19-2024",
+  "definition": {
+   "description": "Smart plug EU",
+   "exposes": [
+    {
+     "features": [
+      {
+       "access": 7,
+       "description": "On/off state of the switch",
+       "label": "State",
+       "name": "state",
+       "property": "state",
+       "type": "binary",
+       "value_off": "OFF",
+       "value_on": "ON",
+       "value_toggle": "TOGGLE"
+      }
+     ],
+     "type": "switch"
+    },
+    {
+     "access": 1,
+     "description": "Instantaneous measured power",
+     "label": "Power",
+     "name": "power",
+     "property": "power",
+     "type": "numeric",
+     "unit": "W"
+    },
+    {
+     "access": 1,
+     "description": "Sum of consumed energy",
+     "label": "Energy",
+     "name": "energy",
+     "property": "energy",
+     "type": "numeric",
+     "unit": "kWh"
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Enable/disable the power outage memory, this recovers the on/off mode after power failure",
+     "label": "Power outage memory",
+     "name": "power_outage_memory",
+     "property": "power_outage_memory",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 1,
+     "description": "Measured electrical potential value",
+     "label": "Voltage",
+     "name": "voltage",
+     "property": "voltage",
+     "type": "numeric",
+     "unit": "V"
+    },
+    {
+     "access": 1,
+     "description": "Instantaneous measured electrical current",
+     "label": "Current",
+     "name": "current",
+     "property": "current",
+     "type": "numeric",
+     "unit": "A"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Device temperature (polled every 30 min)",
+     "label": "Device temperature",
+     "name": "device_temperature",
+     "property": "device_temperature",
+     "type": "numeric",
+     "unit": "°C"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Indicates whether a plug is physically attached. Device does not have to pull power or even be connected electrically (state of this binary switch can be ON even if main power switch is OFF)",
+     "label": "Consumer connected",
+     "name": "consumer_connected",
+     "property": "consumer_connected",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Enable/disable the LED at night",
+     "label": "LED disabled night",
+     "name": "led_disabled_night",
+     "property": "led_disabled_night",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Maximum allowed load, turns off if exceeded",
+     "label": "Overload protection",
+     "name": "overload_protection",
+     "property": "overload_protection",
+     "type": "numeric",
+     "unit": "W",
+     "value_max": 2300,
+     "value_min": 100
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Turn the device automatically off when attached device consumes less than 2W for 20 minutes",
+     "label": "Auto OFF",
+     "name": "auto_off",
+     "property": "auto_off",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Disables the physical switch button",
+     "label": "Button lock",
+     "name": "button_lock",
+     "property": "button_lock",
+     "type": "binary",
+     "value_off": "OFF",
+     "value_on": "ON"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "SP-EUC01",
+   "options": [
+    {
+     "access": 2,
+     "description": "Calibrates the power value (percentual offset), takes into effect on next report of device.",
+     "label": "Power calibration",
+     "name": "power_calibration",
+     "property": "power_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for power, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Power precision",
+     "name": "power_precision",
+     "property": "power_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the energy value (percentual offset), takes into effect on next report of device.",
+     "label": "Energy calibration",
+     "name": "energy_calibration",
+     "property": "energy_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for energy, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Energy precision",
+     "name": "energy_precision",
+     "property": "energy_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the voltage value (percentual offset), takes into effect on next report of device.",
+     "label": "Voltage calibration",
+     "name": "voltage_calibration",
+     "property": "voltage_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for voltage, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Voltage precision",
+     "name": "voltage_precision",
+     "property": "voltage_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the current value (percentual offset), takes into effect on next report of device.",
+     "label": "Current calibration",
+     "name": "current_calibration",
+     "property": "current_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for current, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Current precision",
+     "name": "current_precision",
+     "property": "current_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the device_temperature value (absolute offset), takes into effect on next report of device.",
+     "label": "Device temperature calibration",
+     "name": "device_temperature_calibration",
+     "property": "device_temperature_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "State actions will also be published as 'action' when true (default false).",
+     "label": "State action",
+     "name": "state_action",
+     "property": "state_action",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    }
+   ],
+   "source": "native",
+   "supports_ota": true,
+   "vendor": "Aqara",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [
+     {
+      "cluster": "genOnOff",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     },
+     {
+      "cluster": "haElectricalMeasurement",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     },
+     {
+      "cluster": "seMetering",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     }
+    ],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genDeviceTempCfg",
+      "genIdentify",
+      "genGroups",
+      "genScenes",
+      "genOnOff",
+      "genAlarms",
+      "seMetering",
+      "haElectricalMeasurement"
+     ],
+     "output": [
+      "genTime",
+      "genOta"
+     ]
+    },
+    "configured_reportings": [
+     {
+      "attribute": "onOff",
+      "cluster": "genOnOff",
+      "maximum_report_interval": 3600,
+      "minimum_report_interval": 0,
+      "reportable_change": 0
+     },
+     {
+      "attribute": "currentSummDelivered",
+      "cluster": "seMetering",
+      "maximum_report_interval": 3600,
+      "minimum_report_interval": 5,
+      "reportable_change": 0
+     },
+     {
+      "attribute": "onOff",
+      "cluster": "genOnOff",
+      "maximum_report_interval": 3600,
+      "minimum_report_interval": 0,
+      "reportable_change": 0
+     },
+     {
+      "attribute": "currentSummDelivered",
+      "cluster": "seMetering",
+      "maximum_report_interval": 3600,
+      "minimum_report_interval": 5,
+      "reportable_change": 0
+     }
+    ],
+    "scenes": []
+   },
+   "242": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": [
+      "greenPower"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Radiateur salon",
+  "ieee_address": "0x54ef441000312e2c",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "LUMI",
+  "model_id": "lumi.plug.maeu01",
+  "network_address": 18595,
+  "power_source": "Mains (single phase)",
+  "supported": true,
+  "type": "Router"
+ },
+ {
+  "date_code": "20191205",
+  "definition": {
+   "description": "Temperature and humidity sensor",
+   "exposes": [
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Remaining battery in %, can take up to 24 hours before reported",
+     "label": "Battery",
+     "name": "battery",
+     "property": "battery",
+     "type": "numeric",
+     "unit": "%",
+     "value_max": 100,
+     "value_min": 0
+    },
+    {
+     "access": 1,
+     "description": "Measured temperature value",
+     "label": "Temperature",
+     "name": "temperature",
+     "property": "temperature",
+     "type": "numeric",
+     "unit": "°C"
+    },
+    {
+     "access": 1,
+     "description": "Measured relative humidity",
+     "label": "Humidity",
+     "name": "humidity",
+     "property": "humidity",
+     "type": "numeric",
+     "unit": "%"
+    },
+    {
+     "access": 1,
+     "description": "The measured atmospheric pressure",
+     "label": "Pressure",
+     "name": "pressure",
+     "property": "pressure",
+     "type": "numeric",
+     "unit": "hPa"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Voltage of the battery in millivolts",
+     "label": "Voltage",
+     "name": "voltage",
+     "property": "voltage",
+     "type": "numeric",
+     "unit": "mV"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "WSDCGQ11LM",
+   "options": [
+    {
+     "access": 2,
+     "description": "Calibrates the temperature value (absolute offset), takes into effect on next report of device.",
+     "label": "Temperature calibration",
+     "name": "temperature_calibration",
+     "property": "temperature_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for temperature, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Temperature precision",
+     "name": "temperature_precision",
+     "property": "temperature_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the humidity value (absolute offset), takes into effect on next report of device.",
+     "label": "Humidity calibration",
+     "name": "humidity_calibration",
+     "property": "humidity_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for humidity, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Humidity precision",
+     "name": "humidity_precision",
+     "property": "humidity_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the pressure value (absolute offset), takes into effect on next report of device.",
+     "label": "Pressure calibration",
+     "name": "pressure_calibration",
+     "property": "pressure_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for pressure, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Pressure precision",
+     "name": "pressure_precision",
+     "property": "pressure_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    }
+   ],
+   "source": "native",
+   "supports_ota": false,
+   "vendor": "Aqara",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genIdentify",
+      "65535",
+      "msTemperatureMeasurement",
+      "msPressureMeasurement",
+      "msRelativeHumidity"
+     ],
+     "output": [
+      "genBasic",
+      "genGroups",
+      "65535"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Température extérieur",
+  "ieee_address": "0x00158d0007e2dac6",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "LUMI",
+  "model_id": "lumi.weather",
+  "network_address": 30861,
+  "power_source": "Battery",
+  "software_build_id": "3000-0001",
+  "supported": true,
+  "type": "EndDevice"
+ },
+ {
+  "definition": {
+   "description": "Cube",
+   "exposes": [
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Remaining battery in %, can take up to 24 hours before reported",
+     "label": "Battery",
+     "name": "battery",
+     "property": "battery",
+     "type": "numeric",
+     "unit": "%",
+     "value_max": 100,
+     "value_min": 0
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Voltage of the battery in millivolts",
+     "label": "Voltage",
+     "name": "voltage",
+     "property": "voltage",
+     "type": "numeric",
+     "unit": "mV"
+    },
+    {
+     "access": 1,
+     "label": "Action angle",
+     "name": "action_angle",
+     "property": "action_angle",
+     "type": "numeric",
+     "unit": "°",
+     "value_max": 360,
+     "value_min": -360
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Temperature of the device",
+     "label": "Device temperature",
+     "name": "device_temperature",
+     "property": "device_temperature",
+     "type": "numeric",
+     "unit": "°C"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Number of power outages",
+     "label": "Power outage count",
+     "name": "power_outage_count",
+     "property": "power_outage_count",
+     "type": "numeric"
+    },
+    {
+     "access": 1,
+     "description": "Side of the cube",
+     "label": "Action from side",
+     "name": "action_from_side",
+     "property": "action_from_side",
+     "type": "numeric",
+     "value_max": 6,
+     "value_min": 0,
+     "value_step": 1
+    },
+    {
+     "access": 1,
+     "description": "Side of the cube",
+     "label": "Action side",
+     "name": "action_side",
+     "property": "action_side",
+     "type": "numeric",
+     "value_max": 6,
+     "value_min": 0,
+     "value_step": 1
+    },
+    {
+     "access": 1,
+     "description": "Side of the cube",
+     "label": "Action to side",
+     "name": "action_to_side",
+     "property": "action_to_side",
+     "type": "numeric",
+     "value_max": 6,
+     "value_min": 0,
+     "value_step": 1
+    },
+    {
+     "access": 1,
+     "description": "Side of the cube",
+     "label": "Side",
+     "name": "side",
+     "property": "side",
+     "type": "numeric",
+     "value_max": 6,
+     "value_min": 0,
+     "value_step": 1
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Triggered action (e.g. a button click)",
+     "label": "Action",
+     "name": "action",
+     "property": "action",
+     "type": "enum",
+     "values": [
+      "shake",
+      "throw",
+      "wakeup",
+      "fall",
+      "tap",
+      "slide",
+      "flip180",
+      "flip90",
+      "rotate_left",
+      "rotate_right"
+     ]
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "MFKZQ01LM",
+   "options": [
+    {
+     "access": 2,
+     "description": "Calibrates the device_temperature value (absolute offset), takes into effect on next report of device.",
+     "label": "Device temperature calibration",
+     "name": "device_temperature_calibration",
+     "property": "device_temperature_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    }
+   ],
+   "source": "native",
+   "supports_ota": false,
+   "vendor": "Aqara",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": []
+    },
+    "configured_reportings": [],
+    "scenes": []
+   },
+   "2": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": []
+    },
+    "configured_reportings": [],
+    "scenes": []
+   },
+   "3": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": []
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Cube",
+  "ieee_address": "0x00158d0007081ee7",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "LUMI",
+  "model_id": "lumi.sensor_cube.aqgl01",
+  "network_address": 9491,
+  "power_source": "Battery",
+  "supported": true,
+  "type": "EndDevice"
+ },
+ {
+  "date_code": "20191205",
+  "definition": {
+   "description": "Temperature and humidity sensor",
+   "exposes": [
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Remaining battery in %, can take up to 24 hours before reported",
+     "label": "Battery",
+     "name": "battery",
+     "property": "battery",
+     "type": "numeric",
+     "unit": "%",
+     "value_max": 100,
+     "value_min": 0
+    },
+    {
+     "access": 1,
+     "description": "Measured temperature value",
+     "label": "Temperature",
+     "name": "temperature",
+     "property": "temperature",
+     "type": "numeric",
+     "unit": "°C"
+    },
+    {
+     "access": 1,
+     "description": "Measured relative humidity",
+     "label": "Humidity",
+     "name": "humidity",
+     "property": "humidity",
+     "type": "numeric",
+     "unit": "%"
+    },
+    {
+     "access": 1,
+     "description": "The measured atmospheric pressure",
+     "label": "Pressure",
+     "name": "pressure",
+     "property": "pressure",
+     "type": "numeric",
+     "unit": "hPa"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Voltage of the battery in millivolts",
+     "label": "Voltage",
+     "name": "voltage",
+     "property": "voltage",
+     "type": "numeric",
+     "unit": "mV"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "WSDCGQ11LM",
+   "options": [
+    {
+     "access": 2,
+     "description": "Calibrates the temperature value (absolute offset), takes into effect on next report of device.",
+     "label": "Temperature calibration",
+     "name": "temperature_calibration",
+     "property": "temperature_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for temperature, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Temperature precision",
+     "name": "temperature_precision",
+     "property": "temperature_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the humidity value (absolute offset), takes into effect on next report of device.",
+     "label": "Humidity calibration",
+     "name": "humidity_calibration",
+     "property": "humidity_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for humidity, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Humidity precision",
+     "name": "humidity_precision",
+     "property": "humidity_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the pressure value (absolute offset), takes into effect on next report of device.",
+     "label": "Pressure calibration",
+     "name": "pressure_calibration",
+     "property": "pressure_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for pressure, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Pressure precision",
+     "name": "pressure_precision",
+     "property": "pressure_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    }
+   ],
+   "source": "native",
+   "supports_ota": false,
+   "vendor": "Aqara",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genIdentify",
+      "65535",
+      "msTemperatureMeasurement",
+      "msPressureMeasurement",
+      "msRelativeHumidity"
+     ],
+     "output": [
+      "genBasic",
+      "genGroups",
+      "65535"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Température Chambre enfant",
+  "ieee_address": "0x00158d0007e68886",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "LUMI",
+  "model_id": "lumi.weather",
+  "network_address": 21695,
+  "power_source": "Battery",
+  "software_build_id": "3000-0001",
+  "supported": true,
+  "type": "EndDevice"
+ },
+ {
+  "date_code": "20191205",
+  "definition": {
+   "description": "Temperature and humidity sensor",
+   "exposes": [
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Remaining battery in %, can take up to 24 hours before reported",
+     "label": "Battery",
+     "name": "battery",
+     "property": "battery",
+     "type": "numeric",
+     "unit": "%",
+     "value_max": 100,
+     "value_min": 0
+    },
+    {
+     "access": 1,
+     "description": "Measured temperature value",
+     "label": "Temperature",
+     "name": "temperature",
+     "property": "temperature",
+     "type": "numeric",
+     "unit": "°C"
+    },
+    {
+     "access": 1,
+     "description": "Measured relative humidity",
+     "label": "Humidity",
+     "name": "humidity",
+     "property": "humidity",
+     "type": "numeric",
+     "unit": "%"
+    },
+    {
+     "access": 1,
+     "description": "The measured atmospheric pressure",
+     "label": "Pressure",
+     "name": "pressure",
+     "property": "pressure",
+     "type": "numeric",
+     "unit": "hPa"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Voltage of the battery in millivolts",
+     "label": "Voltage",
+     "name": "voltage",
+     "property": "voltage",
+     "type": "numeric",
+     "unit": "mV"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "WSDCGQ11LM",
+   "options": [
+    {
+     "access": 2,
+     "description": "Calibrates the temperature value (absolute offset), takes into effect on next report of device.",
+     "label": "Temperature calibration",
+     "name": "temperature_calibration",
+     "property": "temperature_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for temperature, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Temperature precision",
+     "name": "temperature_precision",
+     "property": "temperature_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the humidity value (absolute offset), takes into effect on next report of device.",
+     "label": "Humidity calibration",
+     "name": "humidity_calibration",
+     "property": "humidity_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for humidity, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Humidity precision",
+     "name": "humidity_precision",
+     "property": "humidity_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the pressure value (absolute offset), takes into effect on next report of device.",
+     "label": "Pressure calibration",
+     "name": "pressure_calibration",
+     "property": "pressure_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for pressure, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Pressure precision",
+     "name": "pressure_precision",
+     "property": "pressure_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    }
+   ],
+   "source": "native",
+   "supports_ota": false,
+   "vendor": "Aqara",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genIdentify",
+      "65535",
+      "msTemperatureMeasurement",
+      "msPressureMeasurement",
+      "msRelativeHumidity"
+     ],
+     "output": [
+      "genBasic",
+      "genGroups",
+      "65535"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Température Chambre",
+  "ieee_address": "0x00158d000800d82e",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "LUMI",
+  "model_id": "lumi.weather",
+  "network_address": 40660,
+  "power_source": "Battery",
+  "software_build_id": "3000-0001",
+  "supported": true,
+  "type": "EndDevice"
+ },
+ {
+  "date_code": "20191205",
+  "definition": {
+   "description": "Temperature and humidity sensor",
+   "exposes": [
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Remaining battery in %, can take up to 24 hours before reported",
+     "label": "Battery",
+     "name": "battery",
+     "property": "battery",
+     "type": "numeric",
+     "unit": "%",
+     "value_max": 100,
+     "value_min": 0
+    },
+    {
+     "access": 1,
+     "description": "Measured temperature value",
+     "label": "Temperature",
+     "name": "temperature",
+     "property": "temperature",
+     "type": "numeric",
+     "unit": "°C"
+    },
+    {
+     "access": 1,
+     "description": "Measured relative humidity",
+     "label": "Humidity",
+     "name": "humidity",
+     "property": "humidity",
+     "type": "numeric",
+     "unit": "%"
+    },
+    {
+     "access": 1,
+     "description": "The measured atmospheric pressure",
+     "label": "Pressure",
+     "name": "pressure",
+     "property": "pressure",
+     "type": "numeric",
+     "unit": "hPa"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Voltage of the battery in millivolts",
+     "label": "Voltage",
+     "name": "voltage",
+     "property": "voltage",
+     "type": "numeric",
+     "unit": "mV"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "WSDCGQ11LM",
+   "options": [
+    {
+     "access": 2,
+     "description": "Calibrates the temperature value (absolute offset), takes into effect on next report of device.",
+     "label": "Temperature calibration",
+     "name": "temperature_calibration",
+     "property": "temperature_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for temperature, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Temperature precision",
+     "name": "temperature_precision",
+     "property": "temperature_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the humidity value (absolute offset), takes into effect on next report of device.",
+     "label": "Humidity calibration",
+     "name": "humidity_calibration",
+     "property": "humidity_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for humidity, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Humidity precision",
+     "name": "humidity_precision",
+     "property": "humidity_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the pressure value (absolute offset), takes into effect on next report of device.",
+     "label": "Pressure calibration",
+     "name": "pressure_calibration",
+     "property": "pressure_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for pressure, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Pressure precision",
+     "name": "pressure_precision",
+     "property": "pressure_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    }
+   ],
+   "source": "native",
+   "supports_ota": false,
+   "vendor": "Aqara",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genIdentify",
+      "65535",
+      "msTemperatureMeasurement",
+      "msPressureMeasurement",
+      "msRelativeHumidity"
+     ],
+     "output": [
+      "genBasic",
+      "genGroups",
+      "65535"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Température Salon",
+  "ieee_address": "0x00158d0008a6f5c7",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "LUMI",
+  "model_id": "lumi.weather",
+  "network_address": 34895,
+  "power_source": "Battery",
+  "software_build_id": "3000-0001",
+  "supported": true,
+  "type": "EndDevice"
+ },
+ {
+  "date_code": "20250923",
+  "definition": {
+   "description": "Lixee ZLinky",
+   "exposes": [
+    {
+     "access": 1,
+     "description": "Current pricing period",
+     "label": "PTEC",
+     "name": "PTEC",
+     "property": "active_register_tier_delivered",
+     "type": "text"
+    },
+    {
+     "access": 1,
+     "description": "Base index",
+     "label": "BASE",
+     "name": "BASE",
+     "property": "current_summ_delivered",
+     "type": "numeric",
+     "unit": "kWh"
+    },
+    {
+     "access": 1,
+     "description": "Serial Number",
+     "label": "ADCO",
+     "name": "ADCO",
+     "property": "meter_serial_number",
+     "type": "text"
+    },
+    {
+     "access": 1,
+     "description": "Subscribed intensity level",
+     "label": "ISOUSC",
+     "name": "ISOUSC",
+     "property": "available_power",
+     "type": "numeric",
+     "unit": "A"
+    },
+    {
+     "access": 1,
+     "description": "Apparent power",
+     "label": "PAPP",
+     "name": "PAPP",
+     "property": "apparent_power",
+     "type": "numeric",
+     "unit": "VA"
+    },
+    {
+     "access": 1,
+     "description": "Tarif option",
+     "label": "OPTARIF",
+     "name": "OPTARIF",
+     "property": "current_tarif",
+     "type": "text"
+    },
+    {
+     "access": 1,
+     "description": "Meter Status Word",
+     "label": "MOTDETAT",
+     "name": "MOTDETAT",
+     "property": "MOTDETAT",
+     "type": "text"
+    },
+    {
+     "access": 1,
+     "description": "RMS current",
+     "label": "IINST",
+     "name": "IINST",
+     "property": "rms_current",
+     "type": "numeric",
+     "unit": "A"
+    },
+    {
+     "access": 1,
+     "description": "RMS current peak",
+     "label": "IMAX",
+     "name": "IMAX",
+     "property": "rms_current_max",
+     "type": "numeric",
+     "unit": "A"
+    },
+    {
+     "access": 1,
+     "description": "Subscribed Power Exceeded Warning",
+     "label": "ADPS",
+     "name": "ADPS",
+     "property": "warn_d_p_s",
+     "type": "numeric",
+     "unit": "A"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "ZLinky_TIC",
+   "options": [
+    {
+     "access": 2,
+     "description": "Counter with TIC in mode standard or historique. May require restart (default: auto)",
+     "label": "Linky mode",
+     "name": "linky_mode",
+     "property": "linky_mode",
+     "type": "enum",
+     "values": [
+      "auto",
+      "historique",
+      "standard"
+     ]
+    },
+    {
+     "access": 2,
+     "description": "Power with single or three phase. May require restart (default: auto)",
+     "label": "Energy phase",
+     "name": "energy_phase",
+     "property": "energy_phase",
+     "type": "enum",
+     "values": [
+      "auto",
+      "single_phase",
+      "three_phase"
+     ]
+    },
+    {
+     "access": 2,
+     "description": "If you produce energy back to the grid (works ONLY when linky_mode: standard, default: auto)",
+     "label": "Production",
+     "name": "production",
+     "property": "production",
+     "type": "enum",
+     "values": [
+      "auto",
+      "true",
+      "false"
+     ]
+    },
+    {
+     "access": 2,
+     "description": "Overrides the automatic current tarif. This option will exclude unnecessary attributes. Open an issue to support more of them. Default: auto",
+     "label": "Tarif",
+     "name": "tarif",
+     "property": "tarif",
+     "type": "enum",
+     "values": [
+      "Historique - BASE",
+      "Historique - HCHP",
+      "Historique - EJP",
+      "Historique - BBR",
+      "Standard - Sem WE Lundi",
+      "Standard - Sem WE Mercredi",
+      "Standard - Sem WE Vendredi",
+      "Standard - BASE",
+      "Standard - Heure Pleine Heure Creuse",
+      "Standard - Heures Super Creuses",
+      "Standard - TEMPO",
+      "Standard - ZEN Flex",
+      "auto"
+     ]
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for kWh, takes into effect on next report of device. Default: 2",
+     "label": "KWh precision",
+     "name": "kWh_precision",
+     "property": "kWh_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Number of attributes requested from the ZLinky in each poll to reduce Zigbee network load. Requesting too many at once may exceed the device's limit and cause read errors. Requires Z2M restart. Default: 2.",
+     "label": "Measurement poll chunk",
+     "name": "measurement_poll_chunk",
+     "property": "measurement_poll_chunk",
+     "type": "numeric",
+     "value_min": 1
+    },
+    {
+     "access": 2,
+     "description": "Comma-separated list of TIC commands to expose. Requires Z2M restart. Default: all",
+     "label": "Tic command whitelist",
+     "name": "tic_command_whitelist",
+     "property": "tic_command_whitelist",
+     "type": "text"
+    },
+    {
+     "access": 2,
+     "description": "Some attributes do not support reporting and are polled instead. The default poll interval for these is 600 seconds. Set to -1 to disable polling. Polled attributes are those marked as read-only at https://github.com/fairecasoimeme/Zlinky_TIC/",
+     "label": "Measurement poll interval",
+     "name": "measurement_poll_interval",
+     "property": "measurement_poll_interval",
+     "type": "numeric",
+     "value_min": -1
+    }
+   ],
+   "source": "native",
+   "supports_ota": true,
+   "vendor": "LiXee",
+   "version": "0.0.1"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [
+     {
+      "cluster": "seMetering",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     },
+     {
+      "cluster": "seMeterIdentification",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     },
+     {
+      "cluster": "haElectricalMeasurement",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     },
+     {
+      "cluster": "liXeePrivate",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     }
+    ],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genIdentify",
+      "seMetering",
+      "haElectricalMeasurement",
+      "seMeterIdentification",
+      "liXeePrivate",
+      "genPowerCfg"
+     ],
+     "output": [
+      "genOta"
+     ]
+    },
+    "configured_reportings": [
+     {
+      "attribute": "currentSummDelivered",
+      "cluster": "seMetering",
+      "maximum_report_interval": 900,
+      "minimum_report_interval": 60,
+      "reportable_change": 100
+     },
+     {
+      "attribute": "apparentPower",
+      "cluster": "haElectricalMeasurement",
+      "maximum_report_interval": 900,
+      "minimum_report_interval": 60,
+      "reportable_change": 1
+     },
+     {
+      "attribute": "rmsCurrent",
+      "cluster": "haElectricalMeasurement",
+      "maximum_report_interval": 900,
+      "minimum_report_interval": 60,
+      "reportable_change": 1
+     },
+     {
+      "attribute": "warnDPS",
+      "cluster": "liXeePrivate",
+      "maximum_report_interval": 900,
+      "minimum_report_interval": 60,
+      "reportable_change": 1
+     }
+    ],
+    "scenes": []
+   },
+   "242": {
+    "bindings": [],
+    "clusters": {
+     "input": [
+      "greenPower"
+     ],
+     "output": [
+      "greenPower"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Z_linky",
+  "ieee_address": "0x00158d0009520374",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "LiXee",
+  "model_id": "ZLinky_TIC\u0000",
+  "network_address": 53574,
+  "power_source": "Mains (single phase)",
+  "software_build_id": "4000-0017",
+  "supported": true,
+  "type": "Router"
+ },
+ {
+  "date_code": "",
+  "definition": {
+   "description": "mmWave Presence sensor",
+   "exposes": [
+    {
+     "access": 1,
+     "description": "Presence state",
+     "label": "Occupancy",
+     "name": "occupancy",
+     "property": "occupancy",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 1,
+     "description": "Measured illuminance",
+     "label": "Illuminance",
+     "name": "illuminance",
+     "property": "illuminance",
+     "type": "numeric",
+     "unit": "lx"
+    },
+    {
+     "access": 1,
+     "description": "Distance to target",
+     "label": "Target distance",
+     "name": "target_distance",
+     "property": "target_distance",
+     "type": "numeric",
+     "unit": "cm"
+    },
+    {
+     "access": 3,
+     "description": "Motion detection distance",
+     "label": "Motion detection distance",
+     "name": "motion_detection_distance",
+     "property": "motion_detection_distance",
+     "type": "numeric",
+     "unit": "cm",
+     "value_max": 600,
+     "value_min": 0,
+     "value_step": 75
+    },
+    {
+     "access": 1,
+     "description": "Presence keep time",
+     "label": "Presence keep time",
+     "name": "presence_keep_time",
+     "property": "presence_keep_time",
+     "type": "numeric",
+     "unit": "min"
+    },
+    {
+     "access": 3,
+     "description": "Motion detection sensitivity",
+     "label": "Motion detection sensitivity",
+     "name": "motion_detection_sensitivity",
+     "property": "motion_detection_sensitivity",
+     "type": "numeric",
+     "value_max": 5,
+     "value_min": 0,
+     "value_step": 1
+    },
+    {
+     "access": 3,
+     "description": "Static detection sensitivity",
+     "label": "Static detection sensitivity",
+     "name": "static_detection_sensitivity",
+     "property": "static_detection_sensitivity",
+     "type": "numeric",
+     "value_max": 5,
+     "value_min": 0,
+     "value_step": 1
+    },
+    {
+     "access": 3,
+     "description": "Time after which the device will check again for presence",
+     "label": "Fading time",
+     "name": "fading_time",
+     "property": "fading_time",
+     "type": "numeric",
+     "unit": "s",
+     "value_max": 10000,
+     "value_min": 0,
+     "value_step": 1
+    },
+    {
+     "access": 3,
+     "description": "LED Presence Indicator",
+     "label": "Led indicator",
+     "name": "led_indicator",
+     "property": "led_indicator",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "ES1ZZ(TY)",
+   "options": [
+    {
+     "access": 2,
+     "description": "Reply to Tuya-specific time synchronization requests: \"1970\" - Reply with seconds since 1970/01/01 (recommended, should stop the device from asking), \"2000\" - Reply with seconds since 2000/01/01 (use if the weekday is wrong with 1970), \"off\" - Don't reply (use if replying causes too much traffic). Default for this device: \"off\"",
+     "label": "Time start",
+     "name": "time_start",
+     "property": "time_start",
+     "type": "enum",
+     "values": [
+      "1970",
+      "2000",
+      "off"
+     ]
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the illuminance value (percentual offset), takes into effect on next report of device.",
+     "label": "Illuminance calibration",
+     "name": "illuminance_calibration",
+     "property": "illuminance_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    }
+   ],
+   "source": "native",
+   "supports_ota": false,
+   "vendor": "Linptech",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genIdentify",
+      "genGroups",
+      "genScenes",
+      "manuSpecificTuya2",
+      "16384",
+      "manuSpecificTuya",
+      "ssIasZone"
+     ],
+     "output": [
+      "genTime",
+      "genOta"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "presence_bureau",
+  "ieee_address": "0xa49e69fffe9e1983",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "_TZ3218_awarhusb",
+  "model_id": "TS0225",
+  "network_address": 25787,
+  "power_source": "Mains (single phase)",
+  "supported": true,
+  "type": "Router"
+ },
+ {
+  "date_code": "",
+  "definition": {
+   "description": "Switch with power monitoring",
+   "exposes": [
+    {
+     "features": [
+      {
+       "access": 7,
+       "description": "On/off state of the switch",
+       "label": "State",
+       "name": "state",
+       "property": "state",
+       "type": "binary",
+       "value_off": "OFF",
+       "value_on": "ON",
+       "value_toggle": "TOGGLE"
+      }
+     ],
+     "type": "switch"
+    },
+    {
+     "access": 1,
+     "description": "Instantaneous measured power",
+     "label": "Power",
+     "name": "power",
+     "property": "power",
+     "type": "numeric",
+     "unit": "W"
+    },
+    {
+     "access": 1,
+     "description": "Instantaneous measured electrical current",
+     "label": "Current",
+     "name": "current",
+     "property": "current",
+     "type": "numeric",
+     "unit": "A"
+    },
+    {
+     "access": 1,
+     "description": "Measured electrical potential value",
+     "label": "Voltage",
+     "name": "voltage",
+     "property": "voltage",
+     "type": "numeric",
+     "unit": "V"
+    },
+    {
+     "access": 1,
+     "description": "Sum of consumed energy",
+     "label": "Energy",
+     "name": "energy",
+     "property": "energy",
+     "type": "numeric",
+     "unit": "kWh"
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Type of the switch",
+     "label": "Switch type",
+     "name": "switch_type",
+     "property": "switch_type",
+     "type": "enum",
+     "values": [
+      "toggle",
+      "state",
+      "momentary"
+     ]
+    },
+    {
+     "access": 7,
+     "description": "Recover state after power outage",
+     "label": "Power outage memory",
+     "name": "power_outage_memory",
+     "property": "power_outage_memory",
+     "type": "enum",
+     "values": [
+      "on",
+      "off",
+      "restore"
+     ]
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "L6Z",
+   "options": [
+    {
+     "access": 2,
+     "description": "Reply to Tuya-specific time synchronization requests: \"1970\" - Reply with seconds since 1970/01/01 (recommended, should stop the device from asking), \"2000\" - Reply with seconds since 2000/01/01 (use if the weekday is wrong with 1970), \"off\" - Don't reply (use if replying causes too much traffic). Default for this device: \"off\"",
+     "label": "Time start",
+     "name": "time_start",
+     "property": "time_start",
+     "type": "enum",
+     "values": [
+      "1970",
+      "2000",
+      "off"
+     ]
+    },
+    {
+     "access": 2,
+     "description": "This device does not support reporting electric measurements so it is polled instead. The default poll interval is 60 seconds, set to -1 to disable.",
+     "label": "Measurement poll interval",
+     "name": "measurement_poll_interval",
+     "property": "measurement_poll_interval",
+     "type": "numeric",
+     "value_min": -1
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the power value (percentual offset), takes into effect on next report of device.",
+     "label": "Power calibration",
+     "name": "power_calibration",
+     "property": "power_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for power, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Power precision",
+     "name": "power_precision",
+     "property": "power_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the current value (percentual offset), takes into effect on next report of device.",
+     "label": "Current calibration",
+     "name": "current_calibration",
+     "property": "current_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for current, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Current precision",
+     "name": "current_precision",
+     "property": "current_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the voltage value (percentual offset), takes into effect on next report of device.",
+     "label": "Voltage calibration",
+     "name": "voltage_calibration",
+     "property": "voltage_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for voltage, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Voltage precision",
+     "name": "voltage_precision",
+     "property": "voltage_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "Calibrates the energy value (percentual offset), takes into effect on next report of device.",
+     "label": "Energy calibration",
+     "name": "energy_calibration",
+     "property": "energy_calibration",
+     "type": "numeric",
+     "value_step": 0.1
+    },
+    {
+     "access": 2,
+     "description": "Number of digits after decimal point for energy, takes into effect on next report of device. This option can only decrease the precision, not increase it.",
+     "label": "Energy precision",
+     "name": "energy_precision",
+     "property": "energy_precision",
+     "type": "numeric",
+     "value_max": 3,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "description": "State actions will also be published as 'action' when true (default false).",
+     "label": "State action",
+     "name": "state_action",
+     "property": "state_action",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    }
+   ],
+   "source": "native",
+   "supports_ota": true,
+   "vendor": "Nous",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [
+     {
+      "cluster": "genOnOff",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     }
+    ],
+    "clusters": {
+     "input": [
+      "genIdentify",
+      "genGroups",
+      "genScenes",
+      "genOnOff",
+      "seMetering",
+      "haElectricalMeasurement",
+      "57344",
+      "manuSpecificTuya3",
+      "genBasic"
+     ],
+     "output": [
+      "genOta",
+      "genTime"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   },
+   "242": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": [
+      "greenPower"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Interrupteur nspanel",
+  "ieee_address": "0xa4c1389fc6ce5680",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "_TZ3000_qaabwu5c",
+  "model_id": "TS0001",
+  "network_address": 54831,
+  "power_source": "Mains (single phase)",
+  "supported": true,
+  "type": "Router"
+ },
+ {
+  "date_code": "20200907",
+  "definition": {
+   "description": "Wireless remote switch H1 (double rocker)",
+   "exposes": [
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Remaining battery in %, can take up to 24 hours before reported",
+     "label": "Battery",
+     "name": "battery",
+     "property": "battery",
+     "type": "numeric",
+     "unit": "%",
+     "value_max": 100,
+     "value_min": 0
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Voltage of the battery in millivolts",
+     "label": "Voltage",
+     "name": "voltage",
+     "property": "voltage",
+     "type": "numeric",
+     "unit": "mV"
+    },
+    {
+     "access": 7,
+     "description": "Click mode, fast: only supports single click which will be send immediately after clicking.multi: supports more events like double and hold",
+     "label": "Click mode",
+     "name": "click_mode",
+     "property": "click_mode",
+     "type": "enum",
+     "values": [
+      "fast",
+      "multi"
+     ]
+    },
+    {
+     "access": 7,
+     "description": "Operation mode, select \"command\" to enable bindings (wake up the device before changing modes!)",
+     "label": "Operation mode",
+     "name": "operation_mode",
+     "property": "operation_mode",
+     "type": "enum",
+     "values": [
+      "command",
+      "event"
+     ]
+    },
+    {
+     "access": 2,
+     "category": "config",
+     "description": "Initiate device identification. This device is asleep by default.You may need to wake it up first before sending the identify command.",
+     "label": "Identify",
+     "name": "identify",
+     "property": "identify",
+     "type": "enum",
+     "values": [
+      "identify"
+     ]
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Triggered action (e.g. a button click)",
+     "label": "Action",
+     "name": "action",
+     "property": "action",
+     "type": "enum",
+     "values": [
+      "single_left",
+      "single_right",
+      "single_both",
+      "double_left",
+      "double_right",
+      "double_both",
+      "triple_left",
+      "triple_right",
+      "triple_both",
+      "hold_left",
+      "hold_right",
+      "hold_both"
+     ]
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "WXKG15LM",
+   "options": [
+    {
+     "access": 2,
+     "description": "Sets the duration of the identification procedure in seconds (i.e., how long the device would flash).The value ranges from 1 to 30 seconds (default: 3).",
+     "label": "Identify timeout",
+     "name": "identify_timeout",
+     "property": "identify_timeout",
+     "type": "numeric",
+     "value_max": 30,
+     "value_min": 1
+    }
+   ],
+   "source": "native",
+   "supports_ota": false,
+   "vendor": "Aqara",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [
+     {
+      "cluster": "genOnOff",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     },
+     {
+      "cluster": "genPowerCfg",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     }
+    ],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genIdentify",
+      "genPowerCfg"
+     ],
+     "output": [
+      "genIdentify",
+      "genOnOff"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   },
+   "2": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": []
+    },
+    "configured_reportings": [],
+    "scenes": []
+   },
+   "3": {
+    "bindings": [
+     {
+      "cluster": "genOnOff",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     }
+    ],
+    "clusters": {
+     "input": [
+      "genIdentify"
+     ],
+     "output": [
+      "genOnOff"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Interrupteur sans fil ",
+  "ieee_address": "0x54ef441000b7c65f",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "LUMI",
+  "model_id": "lumi.remote.b28ac1",
+  "network_address": 10529,
+  "power_source": "Battery",
+  "software_build_id": "2019\u0000www.",
+  "supported": true,
+  "type": "EndDevice"
+ },
+ {
+  "date_code": "20230908",
+  "definition": {
+   "description": "Wireless button",
+   "exposes": [
+    {
+     "access": 5,
+     "category": "diagnostic",
+     "description": "Remaining battery in %",
+     "label": "Battery",
+     "name": "battery",
+     "property": "battery",
+     "type": "numeric",
+     "unit": "%",
+     "value_max": 100,
+     "value_min": 0
+    },
+    {
+     "access": 5,
+     "category": "diagnostic",
+     "description": "Reported battery voltage in millivolts",
+     "label": "Voltage",
+     "name": "voltage",
+     "property": "voltage",
+     "type": "numeric",
+     "unit": "mV"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Triggered action (e.g. a button click)",
+     "label": "Action",
+     "name": "action",
+     "property": "action",
+     "type": "enum",
+     "values": [
+      "single",
+      "double",
+      "long"
+     ]
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "SNZB-01P",
+   "options": [],
+   "source": "native",
+   "supports_ota": true,
+   "vendor": "SONOFF",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [
+     {
+      "cluster": "genPollCtrl",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     },
+     {
+      "cluster": "genOnOff",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     },
+     {
+      "cluster": "genPowerCfg",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     }
+    ],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genPowerCfg",
+      "genIdentify",
+      "genPollCtrl",
+      "manuSpecificAmazonWWAH"
+     ],
+     "output": [
+      "genIdentify",
+      "genOnOff",
+      "genOta"
+     ]
+    },
+    "configured_reportings": [
+     {
+      "attribute": "batteryPercentageRemaining",
+      "cluster": "genPowerCfg",
+      "maximum_report_interval": 7200,
+      "minimum_report_interval": 3600,
+      "reportable_change": 0
+     },
+     {
+      "attribute": "batteryVoltage",
+      "cluster": "genPowerCfg",
+      "maximum_report_interval": 7200,
+      "minimum_report_interval": 3600,
+      "reportable_change": 0
+     }
+    ],
+    "scenes": []
+   }
+  },
+  "friendly_name": "bouton_tireuse",
+  "ieee_address": "0x7cc6b6fffe393077",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "eWeLink",
+  "model_id": "SNZB-01P",
+  "network_address": 1715,
+  "power_source": "Battery",
+  "software_build_id": "2.2.0",
+  "supported": true,
+  "type": "EndDevice"
+ },
+ {
+  "date_code": "",
+  "definition": {
+   "description": "Alarm",
+   "exposes": [
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Indicates if the battery of this device is almost empty",
+     "label": "Battery low",
+     "name": "battery_low",
+     "property": "battery_low",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 3,
+     "label": "Alarm",
+     "name": "alarm",
+     "property": "alarm",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 3,
+     "label": "Melody",
+     "name": "melody",
+     "property": "melody",
+     "type": "enum",
+     "values": [
+      "1",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17",
+      "18"
+     ]
+    },
+    {
+     "access": 3,
+     "label": "Duration",
+     "name": "duration",
+     "property": "duration",
+     "type": "numeric",
+     "unit": "s",
+     "value_max": 1800,
+     "value_min": 0
+    },
+    {
+     "access": 3,
+     "label": "Volume",
+     "name": "volume",
+     "property": "volume",
+     "type": "enum",
+     "values": [
+      "low",
+      "medium",
+      "high"
+     ]
+    },
+    {
+     "access": 1,
+     "label": "Battpercentage",
+     "name": "battpercentage",
+     "property": "battpercentage",
+     "type": "numeric",
+     "unit": "%"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "NAS-AB02B2",
+   "options": [
+    {
+     "access": 2,
+     "description": "Reply to Tuya-specific time synchronization requests: \"1970\" - Reply with seconds since 1970/01/01 (recommended, should stop the device from asking), \"2000\" - Reply with seconds since 2000/01/01 (use if the weekday is wrong with 1970), \"off\" - Don't reply (use if replying causes too much traffic). Default for this device: \"off\"",
+     "label": "Time start",
+     "name": "time_start",
+     "property": "time_start",
+     "type": "enum",
+     "values": [
+      "1970",
+      "2000",
+      "off"
+     ]
+    }
+   ],
+   "source": "native",
+   "supports_ota": false,
+   "vendor": "NEO",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [],
+    "clusters": {
+     "input": [
+      "genGroups",
+      "genScenes",
+      "manuSpecificTuya",
+      "genBasic"
+     ],
+     "output": [
+      "genOta",
+      "genTime"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   },
+   "242": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": []
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Sirene",
+  "ieee_address": "0xa4c13860c082643c",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "_TZE204_t1blo2bj",
+  "model_id": "TS0601",
+  "network_address": 59561,
+  "power_source": "Mains (single phase)",
+  "supported": true,
+  "type": "Router"
+ },
+ {
+  "date_code": "20230103",
+  "definition": {
+   "description": "Smart siren",
+   "exposes": [
+    {
+     "access": 5,
+     "category": "diagnostic",
+     "description": "Remaining battery in %",
+     "label": "Battery",
+     "name": "battery",
+     "property": "battery",
+     "type": "numeric",
+     "unit": "%",
+     "value_max": 100,
+     "value_min": 0
+    },
+    {
+     "access": 7,
+     "category": "config",
+     "description": "Max duration of Siren",
+     "label": "Max duration",
+     "name": "max_duration",
+     "property": "max_duration",
+     "type": "numeric",
+     "unit": "s",
+     "value_max": 65534,
+     "value_min": 0
+    },
+    {
+     "access": 2,
+     "features": [
+      {
+       "access": 2,
+       "description": "Turn on/off the strobe (light) during warning",
+       "label": "Strobe",
+       "name": "strobe",
+       "property": "strobe",
+       "type": "binary",
+       "value_off": false,
+       "value_on": true
+      },
+      {
+       "access": 2,
+       "description": "Length of the flash cycle",
+       "label": "Strobe duty cycle",
+       "name": "strobe_duty_cycle",
+       "property": "strobe_duty_cycle",
+       "type": "numeric",
+       "value_max": 10,
+       "value_min": 0
+      },
+      {
+       "access": 2,
+       "description": "Duration in seconds of the alarm",
+       "label": "Duration",
+       "name": "duration",
+       "property": "duration",
+       "type": "numeric",
+       "unit": "s"
+      },
+      {
+       "access": 2,
+       "description": "Mode of the warning (sound effect)",
+       "label": "Mode",
+       "name": "mode",
+       "property": "mode",
+       "type": "enum",
+       "values": [
+        "stop",
+        "emergency"
+       ]
+      }
+     ],
+     "label": "Warning",
+     "name": "warning",
+     "property": "warning",
+     "type": "composite"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "HS2WD-E",
+   "options": [],
+   "source": "native",
+   "supports_ota": false,
+   "vendor": "Heiman",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [
+     {
+      "cluster": "genPowerCfg",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     }
+    ],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genPowerCfg",
+      "genIdentify",
+      "genGroups",
+      "ssIasZone",
+      "ssIasWd",
+      "haDiagnostic"
+     ],
+     "output": [
+      "genOta"
+     ]
+    },
+    "configured_reportings": [
+     {
+      "attribute": "batteryPercentageRemaining",
+      "cluster": "genPowerCfg",
+      "maximum_report_interval": 65000,
+      "minimum_report_interval": 3600,
+      "reportable_change": 0
+     }
+    ],
+    "scenes": []
+   },
+   "242": {
+    "bindings": [],
+    "clusters": {
+     "input": [],
+     "output": [
+      "greenPower"
+     ]
+    },
+    "configured_reportings": [],
+    "scenes": []
+   }
+  },
+  "friendly_name": "Heiman Siren",
+  "ieee_address": "0x901f09fffe881f2b",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "HEIMAN",
+  "model_id": "WarningDevice-EF-3.0",
+  "network_address": 57030,
+  "supported": true,
+  "type": "Router"
+ },
+ {
+  "date_code": "20230927",
+  "definition": {
+   "description": "Contact sensor",
+   "exposes": [
+    {
+     "access": 1,
+     "description": "Indicates whether the device is opened or closed",
+     "label": "Contact",
+     "name": "contact",
+     "property": "contact",
+     "type": "binary",
+     "value_off": true,
+     "value_on": false
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Indicates whether the battery of the device is almost empty",
+     "label": "Battery low",
+     "name": "battery_low",
+     "property": "battery_low",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 5,
+     "description": "Tamper-proof status",
+     "label": "Tamper",
+     "name": "tamper",
+     "property": "tamper",
+     "type": "binary",
+     "value_off": false,
+     "value_on": true
+    },
+    {
+     "access": 5,
+     "category": "diagnostic",
+     "description": "Remaining battery in %",
+     "label": "Battery",
+     "name": "battery",
+     "property": "battery",
+     "type": "numeric",
+     "unit": "%",
+     "value_max": 100,
+     "value_min": 0
+    },
+    {
+     "access": 5,
+     "category": "diagnostic",
+     "description": "Reported battery voltage in millivolts",
+     "label": "Voltage",
+     "name": "voltage",
+     "property": "voltage",
+     "type": "numeric",
+     "unit": "mV"
+    },
+    {
+     "access": 1,
+     "category": "diagnostic",
+     "description": "Link quality (signal strength)",
+     "label": "Linkquality",
+     "name": "linkquality",
+     "property": "linkquality",
+     "type": "numeric",
+     "unit": "lqi",
+     "value_max": 255,
+     "value_min": 0
+    }
+   ],
+   "model": "SNZB-04P",
+   "options": [],
+   "source": "native",
+   "supports_ota": true,
+   "vendor": "SONOFF",
+   "version": "0.0.0"
+  },
+  "disabled": false,
+  "endpoints": {
+   "1": {
+    "bindings": [
+     {
+      "cluster": "genPollCtrl",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     },
+     {
+      "cluster": "genPowerCfg",
+      "target": {
+       "endpoint": 1,
+       "ieee_address": "0x00212effff07db95",
+       "type": "endpoint"
+      }
+     }
+    ],
+    "clusters": {
+     "input": [
+      "genBasic",
+      "genPowerCfg",
+      "genIdentify",
+      "genPollCtrl",
+      "ssIasZone",
+      "manuSpecificAmazonWWAH",
+      "64529"
+     ],
+     "output": [
+      "genIdentify",
+      "genOnOff",
+      "genOta"
+     ]
+    },
+    "configured_reportings": [
+     {
+      "attribute": "batteryPercentageRemaining",
+      "cluster": "genPowerCfg",
+      "maximum_report_interval": 7200,
+      "minimum_report_interval": 3600,
+      "reportable_change": 2
+     },
+     {
+      "attribute": "batteryVoltage",
+      "cluster": "genPowerCfg",
+      "maximum_report_interval": 7200,
+      "minimum_report_interval": 3600,
+      "reportable_change": 100
+     }
+    ],
+    "scenes": []
+   }
+  },
+  "friendly_name": "porte_congelateur",
+  "ieee_address": "0x403802fffe03dfb9",
+  "interview_completed": true,
+  "interview_state": "SUCCESSFUL",
+  "interviewing": false,
+  "manufacturer": "eWeLink",
+  "model_id": "SNZB-04P",
+  "network_address": 51493,
+  "power_source": "Battery",
+  "software_build_id": "2.2.0",
+  "supported": true,
+  "type": "EndDevice"
+ }
+]

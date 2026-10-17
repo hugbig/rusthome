@@ -1,0 +1,35 @@
+[package]
+name = "rusthome"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow = "1.0.104"
+axum = "0.8.9"
+chrono = "0.4.45"
+chrono-tz = "0.10.4"
+dotenvy = "0.15.7"
+rusthome-api = { version = "0.1.0", path = "../rusthome-api" }
+rusthome-core = { version = "0.1.0", path = "../rusthome-core" }
+rusthome-frigate = { version = "0.1.0", path = "../rusthome-frigate" }
+rusthome-ha-bridge = { version = "0.1.0", path = "../rusthome-ha-bridge" }
+rusthome-hue = { version = "0.1.0", path = "../rusthome-hue" }
+rusthome-import = { version = "0.1.0", path = "../rusthome-import" }
+rusthome-model = { version = "0.1.0", path = "../rusthome-model" }
+rusthome-mqtt = { version = "0.1.0", path = "../rusthome-mqtt" }
+rusthome-portainer = { version = "0.1.0", path = "../rusthome-portainer" }
+rusthome-recorder = { version = "0.1.0", path = "../rusthome-recorder" }
+rusthome-template = { version = "0.1.0", path = "../rusthome-template" }
+rusthome-z2m = { version = "0.1.0", path = "../rusthome-z2m" }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+tokio = { version = "1.53.3", features = ["full"] }
+toml = "1.1.8"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "json"] }
+url = "2.5.8"

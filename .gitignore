@@ -1,0 +1,12 @@
+/target
+/var
+.env
+node_modules/
+frontend/build/
+frontend/.svelte-kit/
+*.db
+*.db-shm
+*.db-wal
+
+# Inventaire de la maison (synthèses + exports bruts) : local uniquement, jamais versionné
+/inventaire/

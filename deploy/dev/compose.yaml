@@ -1,0 +1,13 @@
+# Dépendances de DÉVELOPPEMENT uniquement. Ports décalés et isolés :
+# rien ici ne parle au Mosquitto ni aux appareils de production (AGENTS.md §4.2).
+name: rusthome-dev
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    ports: ["127.0.0.1:1884:1883"]
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+  ntfy:
+    image: binwiederhier/ntfy
+    command: serve
+    ports: ["127.0.0.1:8090:80"]
