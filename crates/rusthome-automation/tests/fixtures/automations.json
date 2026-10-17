@@ -1,0 +1,2325 @@
+[
+ {
+  "entity_id": "automation.activation_alarme",
+  "state": "off",
+  "config": {
+   "id": "1781192315951",
+   "alias": "Activation alarme",
+   "description": "",
+   "triggers": [
+    {
+     "trigger": "zone.left",
+     "target": {
+      "entity_id": "device_tracker.one_plus_12"
+     },
+     "options": {
+      "for": {
+       "hours": 3,
+       "minutes": 0,
+       "seconds": 0
+      },
+      "zone": "zone.home"
+     }
+    }
+   ],
+   "conditions": [],
+   "actions": [
+    {
+     "action": "input_boolean.turn_on",
+     "metadata": {},
+     "target": {
+      "entity_id": "input_boolean.alarme"
+     },
+     "data": {}
+    }
+   ],
+   "mode": "single",
+   "category": "01KTPYSYNEE662X0CP298FTEWM"
+  }
+ },
+ {
+  "entity_id": "automation.alarme_armement_auto_apres_1h_d_absence",
+  "state": "on",
+  "config": {
+   "id": "1783001967525",
+   "alias": "Alarme — Armement auto après 1h d'absence",
+   "description": "Arme l'alarme en mode absent (sans délai de sortie) quand Hugo est absent depuis 1 heure continue, SAUF si le toggle 'Présence à la maison' est activé (Sokhna/enfants présents sans Hugo, ou Hugo dans le jardin). Notification vers notify.mobile_app_one_plus_12.",
+   "triggers": [
+    {
+     "entity_id": "person.hugo",
+     "for": {
+      "hours": 1,
+      "minutes": 0,
+      "seconds": 0
+     },
+     "to": "not_home",
+     "trigger": "state"
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "state",
+     "entity_id": "input_boolean.presence_a_la_maison",
+     "state": "off"
+    },
+    {
+     "condition": "state",
+     "entity_id": "alarm_control_panel.alarmo",
+     "state": "disarmed"
+    }
+   ],
+   "actions": [
+    {
+     "action": "alarmo.arm",
+     "data": {
+      "mode": "away",
+      "skip_delay": true
+     },
+     "target": {
+      "entity_id": "alarm_control_panel.alarmo"
+     }
+    },
+    {
+     "action": "notify.mobile_app_one_plus_12",
+     "data": {
+      "data": {
+       "ttl": 0
+      },
+      "message": "Personne à la maison depuis 1h — alarme armée en mode absent.",
+      "title": "🔒 Alarme armée automatiquement"
+     }
+    }
+   ],
+   "mode": "single",
+   "category": "01KTPYSYNEE662X0CP298FTEWM"
+  }
+ },
+ {
+  "entity_id": "automation.alarme_concentrix",
+  "state": "on",
+  "config": {
+   "id": "1753276382545",
+   "alias": "Alarme concentrix",
+   "description": "",
+   "triggers": [
+    {
+     "trigger": "numeric_state",
+     "entity_id": [
+      "sensor.concentrix_share"
+     ],
+     "above": 69
+    }
+   ],
+   "conditions": [],
+   "actions": [
+    {
+     "action": "notify.mobile_app_one_plus_12",
+     "metadata": {},
+     "data": {
+      "message": "Action concentric à vendre",
+      "title": "Suivi Action"
+     }
+    }
+   ],
+   "mode": "single",
+   "category": "01KTPYSYNEE662X0CP298FTEWM"
+  }
+ },
+ {
+  "entity_id": "automation.alarme_desarmement_auto_a_l_arrivee",
+  "state": "on",
+  "config": {
+   "id": "1783001983771",
+   "alias": "Alarme — Désarmement auto à l'arrivée",
+   "description": "Désarme automatiquement l'alarme dès que Hugo entre dans la zone Maison (GPS OnePlus 12). Notification téléphone retirée volontairement : le désarmement de routine ne doit plus notifier (comme pour les badges). Les notifications d'intrusion et de badge inconnu restent actives.",
+   "triggers": [
+    {
+     "entity_id": "person.hugo",
+     "to": "home",
+     "trigger": "state"
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "state",
+     "entity_id": "alarm_control_panel.alarmo",
+     "state": [
+      "armed_away",
+      "arming",
+      "pending",
+      "triggered"
+     ]
+    }
+   ],
+   "actions": [
+    {
+     "action": "alarmo.disarm",
+     "target": {
+      "entity_id": "alarm_control_panel.alarmo"
+     }
+    }
+   ],
+   "mode": "single",
+   "category": "01KTPYSYNEE662X0CP298FTEWM"
+  }
+ },
+ {
+  "entity_id": "automation.alarme_reset_presence_a_l_armement",
+  "state": "on",
+  "config": {
+   "id": "1789038728987",
+   "alias": "Alarme — Reset présence à l'armement",
+   "description": "À chaque armement (badge, dashboard ou armement auto), remet le toggle 'Présence à la maison' à off pour qu'il reflète toujours la réalité. Corrige le cas du toggle oublié (ex. activé pour le jardin puis départ).",
+   "triggers": [
+    {
+     "trigger": "state",
+     "entity_id": "alarm_control_panel.alarmo",
+     "to": [
+      "arming",
+      "armed_away"
+     ]
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "state",
+     "entity_id": "input_boolean.presence_a_la_maison",
+     "state": "on"
+    }
+   ],
+   "actions": [
+    {
+     "action": "input_boolean.turn_off",
+     "target": {
+      "entity_id": "input_boolean.presence_a_la_maison"
+     }
+    }
+   ],
+   "mode": "single",
+   "category": "01KTPYSYNEE662X0CP298FTEWM"
+  }
+ },
+ {
+  "entity_id": "automation.alarmo_fin_d_alerte",
+  "state": "on",
+  "config": {
+   "id": "1783001954712",
+   "alias": "Alarmo — Fin d'alerte",
+   "description": "Au désarmement de l'alarme : stoppe la Heiman via MQTT (mode stop, coupe aussi le strobe) avec siren.turn_off en ceinture de sécurité, coupe la sirène Zigbee Tuya et le son du Nest. IMPORTANT : ne stoppe PAS l'automatisation d'intrusion (pas de stop_actions) afin de laisser les clips camera.record en cours se terminer et être sauvegardés. Les boucles s'arrêtent d'elles-mêmes (condition triggered fausse).",
+   "triggers": [
+    {
+     "entity_id": "alarm_control_panel.alarmo",
+     "to": "disarmed",
+     "trigger": "state"
+    }
+   ],
+   "conditions": [],
+   "actions": [
+    {
+     "action": "mqtt.publish",
+     "continue_on_error": true,
+     "data": {
+      "payload": "{\"warning\": {\"mode\": \"stop\", \"level\": \"low\", \"strobe\": false, \"duration\": 0}}",
+      "topic": "zigbee2mqtt/0x901f09fffe881f2b/set"
+     }
+    },
+    {
+     "action": "siren.turn_off",
+     "continue_on_error": true,
+     "target": {
+      "entity_id": "siren.heiman_siren"
+     }
+    },
+    {
+     "action": "switch.turn_off",
+     "continue_on_error": true,
+     "target": {
+      "entity_id": "switch.0xa4c13860c082643c_alarm"
+     }
+    },
+    {
+     "action": "media_player.media_stop",
+     "continue_on_error": true,
+     "target": {
+      "entity_id": "media_player.nest_2"
+     }
+    }
+   ],
+   "mode": "single",
+   "category": "01KTPYSYNEE662X0CP298FTEWM"
+  }
+ },
+ {
+  "entity_id": "automation.alarmo_intrusion_enregistrement_sirene",
+  "state": "on",
+  "config": {
+   "id": "1783001943326",
+   "alias": "Alarmo — Intrusion (enregistrement + sirène)",
+   "description": "Au pending (délai d'entrée) : un clip de 60s pour le salon, SANS notification — sinon un membre de la famille qui rentre avant de badger déclenche une fausse alerte. Au triggered : notification téléphone (déplacée ici volontairement), puis sirènes. Au triggered : le salon a SA PROPRE branche parallèle de clips 60s enchaînés (camera.record est bloquant, le delay de 2s est une respiration entre clips). La caméra chambre/bureau (PT2) est désormais enregistrée par Frigate directement (switch.chambre_recordings activé à l'armement d'Alarmo), plus besoin de camera.record ici pour éviter le double enregistrement. Sirène Heiman commandée en MQTT direct (mode burglar + STROBE actif, l'entité siren standard n'envoie pas le strobe) + sirène Zigbee Tuya (switch), relancées toutes les 8s pour un son continu, + alarm.mp3 sur le Nest. Notifications vers notify.mobile_app_one_plus_12. Au désarmement les boucles s'arrêtent naturellement et les clips en cours vont au bout — NE PAS ajouter de stop_actions dans Fin d'alerte. MODE PARALLEL OBLIGATOIRE : camera.record est bloquant 60s, donc en mode single le passage pending → triggered était ignoré et les sirènes ne partaient jamais.",
+   "triggers": [
+    {
+     "entity_id": "alarm_control_panel.alarmo",
+     "id": "pending",
+     "to": "pending",
+     "trigger": "state"
+    },
+    {
+     "entity_id": "alarm_control_panel.alarmo",
+     "id": "triggered",
+     "to": "triggered",
+     "trigger": "state"
+    }
+   ],
+   "conditions": [],
+   "actions": [
+    {
+     "choose": [
+      {
+       "conditions": [
+        {
+         "condition": "trigger",
+         "id": "pending"
+        }
+       ],
+       "sequence": [
+        {
+         "action": "camera.record",
+         "continue_on_error": true,
+         "data": {
+          "duration": 60,
+          "filename": "/media/{{ now().strftime('%Y%m%d-%H%M%S') }}-salon.mp4",
+          "lookback": 5
+         },
+         "target": {
+          "entity_id": "camera.living_camera_living_mainstream"
+         }
+        }
+       ]
+      },
+      {
+       "conditions": [
+        {
+         "condition": "trigger",
+         "id": "triggered"
+        }
+       ],
+       "sequence": [
+        {
+         "action": "notify.mobile_app_one_plus_12",
+         "data": {
+          "data": {
+           "importance": "max",
+           "media_stream": "alarm_stream_max",
+           "priority": "high",
+           "ttl": 0
+          },
+          "message": "Intrusion à la maison ! Sirènes et enregistrement vidéo en cours.",
+          "title": "🚨 Alarme déclenchée"
+         },
+         "continue_on_error": true
+        },
+        {
+         "action": "media_player.volume_set",
+         "continue_on_error": true,
+         "data": {
+          "volume_level": 1
+         },
+         "target": {
+          "entity_id": "media_player.nest_2"
+         }
+        },
+        {
+         "parallel": [
+          {
+           "repeat": {
+            "sequence": [
+             {
+              "action": "camera.record",
+              "continue_on_error": true,
+              "data": {
+               "duration": 60,
+               "filename": "/media/{{ now().strftime('%Y%m%d-%H%M%S') }}-salon.mp4",
+               "lookback": 5
+              },
+              "target": {
+               "entity_id": "camera.living_camera_living_mainstream"
+              }
+             },
+             {
+              "delay": {
+               "seconds": 2
+              }
+             }
+            ],
+            "while": [
+             {
+              "condition": "state",
+              "entity_id": "alarm_control_panel.alarmo",
+              "state": "triggered"
+             }
+            ]
+           }
+          },
+          {
+           "repeat": {
+            "sequence": [
+             {
+              "action": "mqtt.publish",
+              "continue_on_error": true,
+              "data": {
+               "payload": "{\"warning\": {\"mode\": \"burglar\", \"level\": \"very_high\", \"strobe\": true, \"strobe_level\": \"very_high\", \"strobe_duty_cycle\": 10, \"duration\": 60}}",
+               "topic": "zigbee2mqtt/0x901f09fffe881f2b/set"
+              }
+             },
+             {
+              "action": "switch.turn_on",
+              "continue_on_error": true,
+              "target": {
+               "entity_id": "switch.0xa4c13860c082643c_alarm"
+              }
+             },
+             {
+              "action": "media_player.play_media",
+              "continue_on_error": true,
+              "data": {
+               "media": {
+                "media_content_id": "media-source://media_source/local/alarm.mp3",
+                "media_content_type": "audio/mpeg",
+                "metadata": {}
+               }
+              },
+              "target": {
+               "entity_id": "media_player.nest_2"
+              }
+             },
+             {
+              "delay": {
+               "seconds": 8
+              }
+             }
+            ],
+            "while": [
+             {
+              "condition": "state",
+              "entity_id": "alarm_control_panel.alarmo",
+              "state": "triggered"
+             }
+            ]
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "max": 10,
+   "mode": "parallel",
+   "category": "01KTPYSYNEE662X0CP298FTEWM"
+  }
+ },
+ {
+  "entity_id": "automation.allumer_lampe_bureau",
+  "state": "off",
+  "config": {
+   "id": "1611663486090",
+   "alias": "Allumer Lampe Bureau",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "event": "sunset",
+     "offset": "-00:45",
+     "trigger": "sun"
+    },
+    {
+     "entity_id": "sensor.bagneux_cloud_cover",
+     "above": "75",
+     "trigger": "numeric_state"
+    },
+    {
+     "entity_id": [
+      "sun.sun"
+     ],
+     "to": "above_horizon",
+     "trigger": "state"
+    }
+   ],
+   "actions": [
+    {
+     "type": "turn_on",
+     "device_id": "b194bd8d770b83a3816d29ef9618980c",
+     "entity_id": "light.hue_go_bureau",
+     "domain": "light"
+    },
+    {
+     "type": "turn_on",
+     "device_id": "15575806ab7988eb7ac1cd92e9894f9f",
+     "entity_id": "2fba20bb09c7afaae8dbc61479603605",
+     "domain": "light"
+    },
+    {
+     "type": "turn_on",
+     "device_id": "048c34ba953ed7f4a38640c58ca8d697",
+     "entity_id": "adab7a60acf3306f751a3118a9b62bee",
+     "domain": "light"
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "or",
+     "conditions": [
+      {
+       "condition": "state",
+       "entity_id": "device_tracker.hugo_wks",
+       "state": "home"
+      },
+      {
+       "condition": "state",
+       "entity_id": "device_tracker.hugo_fixe_1",
+       "state": "home"
+      }
+     ]
+    }
+   ],
+   "category": "01HTM33S0V8KXRCW57412M992W"
+  }
+ },
+ {
+  "entity_id": "automation.automation_22",
+  "state": "off",
+  "config": {
+   "id": "1696503159142",
+   "alias": "Gestion lumiere allumage PC",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "entity_id": [
+      "device_tracker.hugo_wks"
+     ],
+     "to": "home",
+     "trigger": "state"
+    },
+    {
+     "entity_id": [
+      "device_tracker.hugo_fixe_1"
+     ],
+     "to": "home",
+     "trigger": "state"
+    }
+   ],
+   "actions": [
+    {
+     "type": "turn_on",
+     "device_id": "b194bd8d770b83a3816d29ef9618980c",
+     "entity_id": "e523b1b3fed8044ba81e2608d113867b",
+     "domain": "light"
+    },
+    {
+     "type": "turn_on",
+     "device_id": "048c34ba953ed7f4a38640c58ca8d697",
+     "entity_id": "adab7a60acf3306f751a3118a9b62bee",
+     "domain": "light"
+    },
+    {
+     "type": "turn_on",
+     "device_id": "15575806ab7988eb7ac1cd92e9894f9f",
+     "entity_id": "2fba20bb09c7afaae8dbc61479603605",
+     "domain": "light"
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "or",
+     "conditions": [
+      {
+       "condition": "sun",
+       "after": "sunset"
+      }
+     ]
+    }
+   ],
+   "category": "01HTM33S0V8KXRCW57412M992W"
+  }
+ },
+ {
+  "entity_id": "automation.awtrix_effect",
+  "state": "on",
+  "config": {
+   "id": "1700731472350",
+   "alias": "Awtrix effect",
+   "description": "",
+   "use_blueprint": {
+    "path": "awtrix_random_effect.yaml",
+    "input": {
+     "awtrix_light": "9aa9e79099122eef9d97576c17c290da",
+     "effect_list": [
+      "BrickBreaker",
+      "Fireworks",
+      "Radar",
+      "Snake",
+      "TheaterChase",
+      "SwirlOut",
+      "LookingEyes",
+      "Pacifica",
+      "PlasmaCloud",
+      "Checkerboard",
+      "PingPong",
+      "Ripple",
+      "TwinklingStars",
+      "ColorWaves",
+      "SwirlIn",
+      "Matrix",
+      "Plasma",
+      "MovingLine"
+     ],
+     "change_interval": "/1",
+     "duration": 7,
+     "awtrix_light_mqtt": "awtrix_ulanzi"
+    }
+   },
+   "category": "01HTM32Z922QPC6C1W4KNS2CYM"
+  }
+ },
+ {
+  "entity_id": "automation.awtrix_spotify_nowplaying",
+  "state": "on",
+  "config": {
+   "id": "1700727874409",
+   "alias": "Awtrix Spotify NowPlaying 🎹",
+   "description": "",
+   "triggers": [
+    {
+     "entity_id": [
+      "media_player.spotify_hugo_bigot"
+     ],
+     "attribute": "media_artist",
+     "trigger": "state"
+    },
+    {
+     "entity_id": [
+      "media_player.spotify_hugo_bigot"
+     ],
+     "trigger": "state"
+    }
+   ],
+   "actions": [
+    {
+     "choose": [
+      {
+       "conditions": [
+        {
+         "condition": "state",
+         "entity_id": "media_player.spotify_hugo_bigot",
+         "state": "playing"
+        },
+        {
+         "condition": "state",
+         "entity_id": "media_player.spotify_hugo_bigot",
+         "attribute": "media_content_type",
+         "state": "music"
+        }
+       ],
+       "sequence": [
+        {
+         "service": "mqtt.publish",
+         "data": {
+          "qos": 0,
+          "retain": false,
+          "payload": "{\n  \"text\": \"{{ state_attr('media_player.spotify_hugo_bigot', 'media_artist') }} - {{ state_attr('media_player.spotify_hugo_bigot', 'media_title') }}\",\n  \"icon\": \"18207\",\n  \"rainbow\": false,\n  \"repeat\": 3,\n  \"color\": \"4ACF37\",\n  \"pushIcon\": 0,\n  \"textCase\": 0,\n  \"textOffset\": 15,\n  \"scrollSpeed\": 75,\n  \"progress\": {{ ( state_attr('media_player.spotify_hugo_bigot', 'media_position') / state_attr('media_player.spotify_hugo_bigot', 'media_duration') * 100 ) | round() }},\n  \"progressC\": \"4ACF37\"\n}",
+          "topic": "awtrix_ulanzi/custom/spotify"
+         }
+        }
+       ]
+      },
+      {
+       "conditions": [
+        {
+         "condition": "template",
+         "value_template": "{{ \n  not states.media_player.spotify_hugo_bigot.state == 'playing'\n}}"
+        }
+       ],
+       "sequence": [
+        {
+         "service": "mqtt.publish",
+         "data": {
+          "qos": 0,
+          "retain": false,
+          "topic": "awtrix_ulanzi/custom/spotify"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "device",
+     "type": "is_on",
+     "device_id": "9aa9e79099122eef9d97576c17c290da",
+     "entity_id": "a23153e12071947bc8675b1103b738ad",
+     "domain": "light"
+    }
+   ],
+   "category": "01HTM32Z922QPC6C1W4KNS2CYM"
+  }
+ },
+ {
+  "entity_id": "automation.badge_armement_desarmement_alarme",
+  "state": "on",
+  "config": {
+   "id": "1789038705384",
+   "alias": "Badge — Armement/désarmement alarme",
+   "description": "Badge autorisé sur un des deux lecteurs NFC : désarme l'alarme et active le toggle présence si elle est armée/en délai ; arme en mode absent et coupe le toggle si elle est désarmée. PAS de notification téléphone sur ces deux cas (trop fréquentes) : le retour se fait par le lecteur (son + anneau) et par input_text.lecteur_dernier_badge affiché à l'écran. Le feedback part sur LES DEUX lecteurs pendant la coexistence v1/v2 : retirer esphome.tag_reader_badge_ok quand le lecteur v1 sera déposé. 'prenom' recalcule l'UID lui-même (trigger.tag_id ou trigger.event.data.tag_id). Badges au 25/09 : AA-00-00-02 = Sokhna (nouveau badge), AA-00-00-03 = Visiteur (ancien badge de Sokhna, réaffecté). Toute modification de badge doit être reportée à 3 endroits : le déclencheur, le dictionnaire 'prenom', et la liste blanche de l'automatisation Badge — Inconnu refusé.",
+   "triggers": [
+    {
+     "tag_id": [
+      "AA-00-00-04",
+      "AA-00-00-05",
+      "AA-00-00-03",
+      "AA-00-00-01",
+      "AA-00-00-02"
+     ],
+     "trigger": "tag"
+    }
+   ],
+   "conditions": [],
+   "actions": [
+    {
+     "choose": [
+      {
+       "conditions": [
+        {
+         "condition": "state",
+         "entity_id": "alarm_control_panel.alarmo",
+         "state": [
+          "armed_away",
+          "arming",
+          "pending",
+          "triggered"
+         ]
+        }
+       ],
+       "sequence": [
+        {
+         "action": "alarmo.disarm",
+         "target": {
+          "entity_id": "alarm_control_panel.alarmo"
+         }
+        },
+        {
+         "action": "input_boolean.turn_on",
+         "target": {
+          "entity_id": "input_boolean.presence_a_la_maison"
+         }
+        },
+        {
+         "action": "input_text.set_value",
+         "data": {
+          "value": "{{ prenom }} est rentré à {{ now().strftime('%H:%M') }}"
+         },
+         "note": "Alimente la ligne affichée sur l'écran du lecteur v2 — remplace la notification téléphone, retirée car trop fréquente.",
+         "target": {
+          "entity_id": "input_text.lecteur_dernier_badge"
+         }
+        },
+        {
+         "action": "esphome.tag_reader_badge_ok",
+         "continue_on_error": true,
+         "data": {},
+         "note": "Lecteur v1 au mur — à retirer quand il sera déposé."
+        },
+        {
+         "action": "esphome.lecteur_alarme_badge_ok",
+         "continue_on_error": true,
+         "data": {},
+         "note": "Lecteur v2 (banc de test)."
+        }
+       ]
+      },
+      {
+       "conditions": [
+        {
+         "condition": "state",
+         "entity_id": "alarm_control_panel.alarmo",
+         "state": "disarmed"
+        }
+       ],
+       "sequence": [
+        {
+         "action": "input_boolean.turn_off",
+         "target": {
+          "entity_id": "input_boolean.presence_a_la_maison"
+         }
+        },
+        {
+         "action": "alarmo.arm",
+         "data": {
+          "mode": "away"
+         },
+         "target": {
+          "entity_id": "alarm_control_panel.alarmo"
+         }
+        },
+        {
+         "action": "input_text.set_value",
+         "data": {
+          "value": "{{ prenom }} est parti à {{ now().strftime('%H:%M') }}"
+         },
+         "target": {
+          "entity_id": "input_text.lecteur_dernier_badge"
+         }
+        },
+        {
+         "action": "esphome.tag_reader_badge_ok",
+         "continue_on_error": true,
+         "data": {}
+        },
+        {
+         "action": "esphome.lecteur_alarme_badge_ok",
+         "continue_on_error": true,
+         "data": {}
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "mode": "single",
+   "variables": {
+    "prenom": "{% set u = ((trigger.tag_id | default('', true)) or (trigger.event.data.tag_id | default('', true))) | upper | trim %}{% set noms = {'AA-00-00-05': 'Hugo', 'AA-00-00-04': 'Hugo', 'AA-00-00-01': 'Léo', 'AA-00-00-02': 'Sokhna', 'AA-00-00-03': 'Visiteur'} %}{{ noms.get(u, 'Quelqu un') }}"
+   },
+   "category": "01KTPYSYNEE662X0CP298FTEWM"
+  }
+ },
+ {
+  "entity_id": "automation.badge_inconnu_refuse",
+  "state": "on",
+  "config": {
+   "id": "1789038717754",
+   "alias": "Badge — Inconnu refusé",
+   "description": "Tout badge scanné hors liste blanche : feedback rouge + bip long sur LES DEUX lecteurs, et notification avec l'UID (utile aussi pour enrôler un nouveau badge). ATTENTION : la liste blanche est une liste Jinja, chaque UID doit être séparé par une VIRGULE — sans elle, deux chaînes voisines fusionnent silencieusement et les badges concernés passent pour inconnus (c'était le cas entre AA-00-00-02 et AA-00-00-03, corrigé le 25/09). Garder cette liste synchronisée avec le déclencheur ET le dictionnaire 'prenom' de l'automatisation Badge — Armement/désarmement.",
+   "triggers": [
+    {
+     "event_type": "tag_scanned",
+     "trigger": "event"
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "template",
+     "value_template": "{{ trigger.event.data.tag_id not in ['AA-00-00-04', 'AA-00-00-05', 'AA-00-00-02', 'AA-00-00-03', 'AA-00-00-01'] }}"
+    }
+   ],
+   "actions": [
+    {
+     "action": "esphome.tag_reader_badge_ko",
+     "continue_on_error": true,
+     "data": {},
+     "note": "Lecteur v1 au mur — à retirer quand il sera déposé."
+    },
+    {
+     "action": "esphome.lecteur_alarme_badge_ko",
+     "continue_on_error": true,
+     "data": {},
+     "note": "Lecteur v2 — ajouté le 25/09 : le refus ne partait que vers la v1."
+    },
+    {
+     "action": "notify.mobile_app_one_plus_12",
+     "data": {
+      "data": {
+       "ttl": 0
+      },
+      "message": "UID : {{ trigger.event.data.tag_id }}",
+      "title": "⚠️ Badge inconnu scanné"
+     }
+    }
+   ],
+   "mode": "single",
+   "category": "01KTPYSYNEE662X0CP298FTEWM"
+  }
+ },
+ {
+  "entity_id": "automation.concentrix_shares",
+  "state": "on",
+  "config": {
+   "id": "1700734207966",
+   "alias": "Concentrix Shares",
+   "description": "",
+   "triggers": [
+    {
+     "minutes": "/5",
+     "trigger": "time_pattern"
+    }
+   ],
+   "actions": [
+    {
+     "service": "mqtt.publish",
+     "data": {
+      "qos": 0,
+      "retain": false,
+      "payload": "{\n  \"text\": \"{{ states.sensor.concentrix_share.state }} $ / {{ state_attr('sensor.concentrix_share', 'changePercent') }} %\",\n  \"icon\": \"43335\",\n  \"color\": \"{{ iif( state_attr('sensor.concentrix_share', 'change') >= 0, '4ACF37', 'DA2210' ) }}\",\n  \"rainbow\": false,\n  \"repeat\": 3,\n  \"pushIcon\": 0,\n  \"textCase\": 0,\n  \"textOffset\": 15,\n  \"duration\": 7,\n  \"scrollSpeed\": 75\n}",
+      "topic": "awtrix_ulanzi/custom/concentrix"
+     }
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "device",
+     "type": "is_on",
+     "device_id": "9aa9e79099122eef9d97576c17c290da",
+     "entity_id": "a23153e12071947bc8675b1103b738ad",
+     "domain": "light"
+    }
+   ],
+   "category": "01HTM32Z922QPC6C1W4KNS2CYM"
+  }
+ },
+ {
+  "entity_id": "automation.eteindre_bureau",
+  "state": "off",
+  "config": {
+   "id": "1643298885117",
+   "alias": "Eteindre Bureau portable",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "entity_id": "device_tracker.hugo_wks",
+     "to": "not_home",
+     "from": "home",
+     "trigger": "state"
+    }
+   ],
+   "actions": [
+    {
+     "type": "turn_off",
+     "device_id": "b194bd8d770b83a3816d29ef9618980c",
+     "entity_id": "light.hue_go_bureau",
+     "domain": "light"
+    },
+    {
+     "type": "turn_off",
+     "device_id": "15575806ab7988eb7ac1cd92e9894f9f",
+     "entity_id": "2fba20bb09c7afaae8dbc61479603605",
+     "domain": "light"
+    },
+    {
+     "type": "turn_off",
+     "device_id": "048c34ba953ed7f4a38640c58ca8d697",
+     "entity_id": "adab7a60acf3306f751a3118a9b62bee",
+     "domain": "light"
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "state",
+     "entity_id": "device_tracker.hugo_fixe_1",
+     "state": "not_home"
+    }
+   ],
+   "category": "01HTM33S0V8KXRCW57412M992W"
+  }
+ },
+ {
+  "entity_id": "automation.eteindre_bureau_fixe",
+  "state": "off",
+  "config": {
+   "id": "1679997013617",
+   "alias": "Eteindre bureau fixe",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "entity_id": [
+      "device_tracker.hugo_fixe_1"
+     ],
+     "to": "not_home",
+     "from": "home",
+     "trigger": "state"
+    }
+   ],
+   "actions": [
+    {
+     "type": "turn_off",
+     "device_id": "b194bd8d770b83a3816d29ef9618980c",
+     "entity_id": "light.hue_go_bureau",
+     "domain": "light"
+    },
+    {
+     "type": "turn_off",
+     "device_id": "15575806ab7988eb7ac1cd92e9894f9f",
+     "entity_id": "2fba20bb09c7afaae8dbc61479603605",
+     "domain": "light"
+    },
+    {
+     "type": "turn_off",
+     "device_id": "048c34ba953ed7f4a38640c58ca8d697",
+     "entity_id": "adab7a60acf3306f751a3118a9b62bee",
+     "domain": "light"
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "state",
+     "entity_id": "device_tracker.hugo_wks",
+     "state": "not_home"
+    }
+   ],
+   "category": "01HTM33S0V8KXRCW57412M992W"
+  }
+ },
+ {
+  "entity_id": "automation.eteindre_radiateur_salon",
+  "state": "on",
+  "config": {
+   "id": "1670236016266",
+   "alias": "Éteindre radiateur salon",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "at": "01:00:00",
+     "trigger": "time"
+    }
+   ],
+   "actions": [
+    {
+     "type": "turn_off",
+     "device_id": "3c4d02130fd529e1d49cd3065a3f5390",
+     "entity_id": "switch.radiateur_salon",
+     "domain": "switch"
+    }
+   ],
+   "conditions": [],
+   "category": "01HTM3CBQSAZ5JHM60XZTT5CA4"
+  }
+ },
+ {
+  "entity_id": "automation.eteindre_tv",
+  "state": "on",
+  "config": {
+   "id": "1646848817437",
+   "alias": "Éteindre TV",
+   "description": "",
+   "triggers": [
+    {
+     "device_id": "aae92f62584de5dc62e0c92f8931aefb",
+     "domain": "hue",
+     "type": "initial_press",
+     "subtype": 4,
+     "unique_id": "fd3424b7-629c-4190-99b9-0bd05cb17268",
+     "trigger": "device"
+    }
+   ],
+   "conditions": [],
+   "actions": [
+    {
+     "type": "turn_off",
+     "device_id": "7d3852e22583a91f2d8f2adfe2324f53",
+     "entity_id": "a550063dd87c509b0c9c61cd9cec79cb",
+     "domain": "remote"
+    }
+   ],
+   "mode": "single",
+   "category": "01HTM3CBQSAZ5JHM60XZTT5CA4"
+  }
+ },
+ {
+  "entity_id": "automation.flag_update_awtrix",
+  "state": "on",
+  "config": {
+   "id": "1700817177289",
+   "alias": "Flag update Awtrix",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "hours": "/1",
+     "trigger": "time_pattern"
+    }
+   ],
+   "actions": [
+    {
+     "if": [
+      {
+       "condition": "template",
+       "value_template": "{{ states.sensor.blueforcer_awtrix_light_derniere_version.state !=  'Release ' + states.sensor.awtrix_b5d8b4_version.state }}"
+      }
+     ],
+     "then": [
+      {
+       "service": "mqtt.publish",
+       "data": {
+        "qos": 0,
+        "retain": false,
+        "payload": "{\n  \"text\": \"{{ states.sensor.blueforcer_awtrix_light_derniere_version.state  }}\",\n  \"icon\": \"37369\",\n  \"rainbow\": false,\n  \"repeat\": 2,\n  \"pushIcon\": 0,\n  \"textCase\": 2,\n  \"textOffset\": 15,\n  \"duration\": 7,\n  \"scrollSpeed\": 75\n}",
+        "topic": "awtrix_ulanzi/custom/updateAwtrix"
+       }
+      },
+      {
+       "service": "notify.pushbullet",
+       "data": {
+        "title": "Awtrix update",
+        "message": "Mise à  jour Awtrix : {{ states.sensor.blueforcer_awtrix_light_derniere_version.state }}"
+       }
+      }
+     ],
+     "else": [
+      {
+       "service": "mqtt.publish",
+       "data": {
+        "qos": 0,
+        "retain": false,
+        "topic": "awtrix_ulanzi/custom/updateAwtrix"
+       }
+      }
+     ]
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "device",
+     "type": "is_on",
+     "device_id": "9aa9e79099122eef9d97576c17c290da",
+     "entity_id": "a23153e12071947bc8675b1103b738ad",
+     "domain": "light"
+    }
+   ],
+   "category": "01HTM32Z922QPC6C1W4KNS2CYM"
+  }
+ },
+ {
+  "entity_id": "automation.frigate_enregistrement_snapshots_selon_etat_alarmo",
+  "state": "on",
+  "config": {
+   "id": "1787935257337",
+   "alias": "Frigate - Enregistrement + snapshots selon état Alarmo",
+   "description": "Active switch.chambre_recordings et switch.chambre_snapshots quand Alarmo est armé (away ou home), les désactive au désarmement. Objectif vie privée : rien n'est capturé par Frigate quand tu es chez toi, alarme désarmée. Resynchronise aussi au démarrage de HA et quand Frigate revient en ligne — nécessaire depuis que record.enabled est à true dans la config Frigate (sinon le switch Recordings refuse de s'activer et aucun clip vidéo n'est enregistré).",
+   "triggers": [
+    {
+     "trigger": "state",
+     "entity_id": "alarm_control_panel.alarmo",
+     "to": [
+      "armed_away",
+      "armed_home"
+     ],
+     "id": "armed"
+    },
+    {
+     "trigger": "state",
+     "entity_id": "alarm_control_panel.alarmo",
+     "to": "disarmed",
+     "id": "disarmed"
+    },
+    {
+     "trigger": "homeassistant",
+     "event": "start",
+     "id": "resync",
+     "note": "Frigate démarre avec l'enregistrement actif : il faut le recouper si l'alarme est désarmée."
+    },
+    {
+     "trigger": "state",
+     "entity_id": "switch.chambre_recordings",
+     "from": "unavailable",
+     "id": "resync",
+     "note": "Frigate revient en ligne après un redémarrage de l'add-on."
+    }
+   ],
+   "conditions": [],
+   "actions": [
+    {
+     "choose": [
+      {
+       "conditions": [
+        {
+         "condition": "trigger",
+         "id": "armed"
+        }
+       ],
+       "sequence": [
+        {
+         "action": "switch.turn_on",
+         "target": {
+          "entity_id": [
+           "switch.chambre_recordings",
+           "switch.chambre_snapshots"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "conditions": [
+        {
+         "condition": "trigger",
+         "id": "disarmed"
+        }
+       ],
+       "sequence": [
+        {
+         "action": "switch.turn_off",
+         "target": {
+          "entity_id": [
+           "switch.chambre_recordings",
+           "switch.chambre_snapshots"
+          ]
+         }
+        }
+       ]
+      },
+      {
+       "conditions": [
+        {
+         "condition": "trigger",
+         "id": "resync"
+        }
+       ],
+       "sequence": [
+        {
+         "delay": "00:00:15",
+         "note": "Laisse Frigate finir son démarrage avant d'accepter les ordres."
+        },
+        {
+         "if": [
+          {
+           "condition": "state",
+           "entity_id": "alarm_control_panel.alarmo",
+           "state": [
+            "armed_away",
+            "armed_home",
+            "arming",
+            "pending",
+            "triggered"
+           ]
+          }
+         ],
+         "then": [
+          {
+           "action": "switch.turn_on",
+           "target": {
+            "entity_id": [
+             "switch.chambre_recordings",
+             "switch.chambre_snapshots"
+            ]
+           }
+          }
+         ],
+         "else": [
+          {
+           "action": "switch.turn_off",
+           "target": {
+            "entity_id": [
+             "switch.chambre_recordings",
+             "switch.chambre_snapshots"
+            ]
+           }
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "mode": "single",
+   "category": "01KTPYSYNEE662X0CP298FTEWM"
+  }
+ },
+ {
+  "entity_id": "automation.interrupteur_mural_gauche_double",
+  "state": "on",
+  "config": {
+   "id": "1643835178995",
+   "alias": "Interrupteur mural gauche double",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "cc9340b4b982289817f554fd7ef5fd22",
+     "type": "action",
+     "subtype": "double_left",
+     "discovery_id": "0x54ef4410002a0654 action_double_left",
+     "trigger": "device"
+    }
+   ],
+   "actions": [
+    {
+     "type": "toggle",
+     "device_id": "567be43952e5de1cdb511f636f8f31de",
+     "entity_id": "switch.0x54ef4410003a6d55",
+     "domain": "switch"
+    }
+   ],
+   "conditions": [],
+   "category": "01HTM39M1V81EX07QG69C21H8E"
+  }
+ },
+ {
+  "entity_id": "automation.interrupteur_sans_fil_double_droite",
+  "state": "on",
+  "config": {
+   "id": "1643895217251",
+   "alias": "Interrupteur sans fil double droite",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "135faf540e6b9f373faeb5671efd1597",
+     "type": "action",
+     "subtype": "double_right",
+     "trigger": "device"
+    }
+   ],
+   "actions": [
+    {
+     "type": "toggle",
+     "device_id": "567be43952e5de1cdb511f636f8f31de",
+     "entity_id": "87b76ecbad95a658ff1c98bdbc937628",
+     "domain": "switch"
+    },
+    {
+     "type": "toggle",
+     "device_id": "11e484edba4b57394ce721ffba4fc321",
+     "entity_id": "2086268ff3ea76a21cd02e93200f1eec",
+     "domain": "switch"
+    }
+   ],
+   "conditions": [],
+   "category": "01HTM39M1V81EX07QG69C21H8E"
+  }
+ },
+ {
+  "entity_id": "automation.interrupteur_sans_fil_double_gauche",
+  "state": "on",
+  "config": {
+   "id": "1643895217250",
+   "alias": "Interrupteur sans fil double gauche",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "135faf540e6b9f373faeb5671efd1597",
+     "type": "action",
+     "subtype": "double_left",
+     "trigger": "device"
+    }
+   ],
+   "actions": [
+    {
+     "type": "toggle",
+     "device_id": "567be43952e5de1cdb511f636f8f31de",
+     "entity_id": "87b76ecbad95a658ff1c98bdbc937628",
+     "domain": "switch"
+    },
+    {
+     "type": "toggle",
+     "device_id": "11e484edba4b57394ce721ffba4fc321",
+     "entity_id": "2086268ff3ea76a21cd02e93200f1eec",
+     "domain": "switch"
+    }
+   ],
+   "conditions": [],
+   "category": "01HTM39M1V81EX07QG69C21H8E"
+  }
+ },
+ {
+  "entity_id": "automation.interrupteur_sans_fil_double_gauche_2",
+  "state": "on",
+  "config": {
+   "id": "1643895478481",
+   "alias": "Interrupteur sans fil triple gauche",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "135faf540e6b9f373faeb5671efd1597",
+     "type": "action",
+     "subtype": "triple_left",
+     "trigger": "device"
+    }
+   ],
+   "actions": [
+    {
+     "type": "turn_off",
+     "device_id": "cc9340b4b982289817f554fd7ef5fd22",
+     "entity_id": "switch.interrupteur_living_right",
+     "domain": "switch"
+    },
+    {
+     "type": "turn_off",
+     "device_id": "567be43952e5de1cdb511f636f8f31de",
+     "entity_id": "switch.0x54ef4410003a6d55",
+     "domain": "switch"
+    },
+    {
+     "type": "turn_off",
+     "device_id": "11e484edba4b57394ce721ffba4fc321",
+     "entity_id": "switch.0x54ef4410003a66f3",
+     "domain": "switch"
+    }
+   ],
+   "conditions": [],
+   "category": "01HTM39M1V81EX07QG69C21H8E"
+  }
+ },
+ {
+  "entity_id": "automation.interrupteur_sans_fil_simple_droit",
+  "state": "on",
+  "config": {
+   "id": "1643895069455",
+   "alias": "Interrupteur sans fil simple droit",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "135faf540e6b9f373faeb5671efd1597",
+     "type": "action",
+     "subtype": "single_right",
+     "trigger": "device"
+    }
+   ],
+   "actions": [
+    {
+     "type": "toggle",
+     "device_id": "567be43952e5de1cdb511f636f8f31de",
+     "entity_id": "switch.0x54ef4410003a6d55",
+     "domain": "switch"
+    }
+   ],
+   "conditions": [],
+   "category": "01HTM39M1V81EX07QG69C21H8E"
+  }
+ },
+ {
+  "entity_id": "automation.interrupteur_sans_fil_simple_gauche",
+  "state": "on",
+  "config": {
+   "id": "1643895006008",
+   "alias": "Interrupteur sans fil simple gauche",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "135faf540e6b9f373faeb5671efd1597",
+     "type": "action",
+     "subtype": "single_left",
+     "trigger": "device"
+    }
+   ],
+   "actions": [
+    {
+     "type": "toggle",
+     "device_id": "11e484edba4b57394ce721ffba4fc321",
+     "entity_id": "switch.0x54ef4410003a66f3",
+     "domain": "switch"
+    }
+   ],
+   "conditions": [],
+   "category": "01HTM39M1V81EX07QG69C21H8E"
+  }
+ },
+ {
+  "entity_id": "automation.luminance_bureau",
+  "state": "on",
+  "config": {
+   "id": "1700738053508",
+   "alias": "Luminance Bureau",
+   "description": "",
+   "triggers": [
+    {
+     "minutes": "/5",
+     "trigger": "time_pattern"
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "device",
+     "type": "is_on",
+     "device_id": "9aa9e79099122eef9d97576c17c290da",
+     "entity_id": "a23153e12071947bc8675b1103b738ad",
+     "domain": "light"
+    }
+   ],
+   "actions": [
+    {
+     "data": {
+      "qos": 0,
+      "retain": false,
+      "payload": "{\n  \"text\": \"{{ states.sensor.presence_bureau_illuminance.state  }} L\",\n  \"icon\": \"630\",\n  \"rainbow\": false,\n  \"center\": true,\n  \"pushIcon\": 0,\n  \"textCase\": 2,\n  \"textOffset\": -2,\n  \"duration\": 7,\n  \"progress\": -1\n}",
+      "topic": "awtrix_ulanzi/custom/lux_bureau"
+     },
+     "action": "mqtt.publish"
+    }
+   ],
+   "category": "01HTM32Z922QPC6C1W4KNS2CYM"
+  }
+ },
+ {
+  "entity_id": "automation.nouvelle_automatisation",
+  "state": "on",
+  "config": {
+   "id": "1643835178993",
+   "alias": "Interrupteur mural gauche simple",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "cc9340b4b982289817f554fd7ef5fd22",
+     "type": "action",
+     "subtype": "single_left",
+     "discovery_id": "0x54ef4410002a0654 action_single_left",
+     "trigger": "device"
+    }
+   ],
+   "actions": [
+    {
+     "type": "toggle",
+     "device_id": "11e484edba4b57394ce721ffba4fc321",
+     "entity_id": "switch.0x54ef4410003a66f3",
+     "domain": "switch"
+    }
+   ],
+   "conditions": [],
+   "category": "01HTM39M1V81EX07QG69C21H8E"
+  }
+ },
+ {
+  "entity_id": "automation.nouvelle_automatisation_4",
+  "state": "on",
+  "config": {
+   "id": "1652972737098",
+   "alias": "Spotify Play/Pause",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "7748737a4fcd65c20526012c47553e38",
+     "type": "action",
+     "subtype": "tap",
+     "discovery_id": "0x00158d0007081ee7 action_tap",
+     "trigger": "device"
+    }
+   ],
+   "actions": [
+    {
+     "service": "media_player.media_play_pause",
+     "data": {},
+     "target": {
+      "entity_id": "media_player.spotify_hugo_bigot"
+     }
+    }
+   ],
+   "conditions": [],
+   "category": "01HTM3DNK9PP2H462DSW9H0C1C"
+  }
+ },
+ {
+  "entity_id": "automation.nouvelle_automatisation_5",
+  "state": "on",
+  "config": {
+   "id": "1652973529513",
+   "alias": "Spotify Volume up",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "7748737a4fcd65c20526012c47553e38",
+     "type": "action",
+     "subtype": "rotate_right",
+     "discovery_id": "0x00158d0007081ee7 action_rotate_right",
+     "trigger": "device"
+    }
+   ],
+   "actions": [
+    {
+     "service": "media_player.volume_up",
+     "data": {},
+     "target": {
+      "entity_id": "media_player.spotify_hugo_bigot"
+     }
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "numeric_state",
+     "entity_id": "sensor.cube_action_side",
+     "attribute": "side",
+     "above": "3",
+     "below": "5"
+    }
+   ],
+   "category": "01HTM3DNK9PP2H462DSW9H0C1C"
+  }
+ },
+ {
+  "entity_id": "automation.oublie_parte_carte",
+  "state": "off",
+  "config": {
+   "id": "1660147918475",
+   "alias": "Oublie parte carte Hugo",
+   "description": "Alerte si le porte-carte (tracker portefeuille) s'éloigne de plus de 15m de Hugo. Notification migrée de mobile_app_hugo_mobile (enregistrement obsolète supprimé) vers mobile_app_one_plus_12.",
+   "triggers": [
+    {
+     "trigger": "template",
+     "value_template": "{{ distance('person.hugo', 'device_tracker.portefeuille') > 0.015 }}"
+    }
+   ],
+   "conditions": [],
+   "actions": [
+    {
+     "data": {
+      "message": "Porte Carte oublié !",
+      "title": "Porte Carte oublié !"
+     },
+     "action": "notify.pushbullet"
+    },
+    {
+     "data": {
+      "message": "Porte Carte oublié !",
+      "title": "Porte Carte oublié !"
+     },
+     "action": "notify.mobile_app_one_plus_12"
+    }
+   ],
+   "mode": "single"
+  }
+ },
+ {
+  "entity_id": "automation.porte_congelateur",
+  "state": "on",
+  "config": {
+   "id": "1788181542333",
+   "alias": "Porte Congélateur",
+   "description": "",
+   "triggers": [
+    {
+     "trigger": "state",
+     "entity_id": "binary_sensor.porte_congelateur_contact",
+     "to": "on"
+    }
+   ],
+   "conditions": [],
+   "actions": [
+    {
+     "repeat": {
+      "while": [
+       {
+        "condition": "state",
+        "entity_id": "binary_sensor.porte_congelateur_contact",
+        "state": "on"
+       }
+      ],
+      "sequence": [
+       {
+        "delay": {
+         "minutes": 1
+        }
+       },
+       {
+        "condition": "state",
+        "entity_id": "binary_sensor.porte_congelateur_contact",
+        "state": "on"
+       },
+       {
+        "action": "notify.mobile_app_one_plus_12",
+        "data": {
+         "data": {
+          "importance": "max",
+          "media_stream": "alarm_stream_max",
+          "priority": "high",
+          "ttl": 0
+         },
+         "message": "Le congélateur est ouvert !",
+         "title": "🚨 Alarme — Congélateur"
+        }
+       }
+      ]
+     }
+    }
+   ],
+   "mode": "restart",
+   "category": "01KTPYSYNEE662X0CP298FTEWM"
+  }
+ },
+ {
+  "entity_id": "automation.presence_bureau",
+  "state": "on",
+  "config": {
+   "id": "1700563598396",
+   "alias": "présence_bureau",
+   "description": "",
+   "triggers": [
+    {
+     "type": "motion",
+     "device_id": "b3734747821eeb0ef3700d56bbcbd458",
+     "entity_id": "fd85b37130827dcc9055e4dd871ecc37",
+     "domain": "binary_sensor",
+     "for": {
+      "hours": 0,
+      "minutes": 2,
+      "seconds": 0
+     },
+     "trigger": "device"
+    },
+    {
+     "type": "no_motion",
+     "device_id": "b3734747821eeb0ef3700d56bbcbd458",
+     "entity_id": "fd85b37130827dcc9055e4dd871ecc37",
+     "domain": "binary_sensor",
+     "for": {
+      "hours": 0,
+      "minutes": 5,
+      "seconds": 0
+     },
+     "trigger": "device"
+    }
+   ],
+   "conditions": [],
+   "actions": [
+    {
+     "if": [
+      {
+       "type": "is_motion",
+       "condition": "device",
+       "device_id": "b3734747821eeb0ef3700d56bbcbd458",
+       "entity_id": "fd85b37130827dcc9055e4dd871ecc37",
+       "domain": "binary_sensor"
+      },
+      {
+       "condition": "numeric_state",
+       "entity_id": "sensor.presence_bureau_illuminance",
+       "below": 500
+      },
+      {
+       "condition": "state",
+       "entity_id": "person.hugo",
+       "state": "home"
+      }
+     ],
+     "then": [
+      {
+       "type": "turn_on",
+       "device_id": "b194bd8d770b83a3816d29ef9618980c",
+       "entity_id": "e523b1b3fed8044ba81e2608d113867b",
+       "domain": "light"
+      },
+      {
+       "type": "turn_on",
+       "device_id": "048c34ba953ed7f4a38640c58ca8d697",
+       "entity_id": "adab7a60acf3306f751a3118a9b62bee",
+       "domain": "light"
+      },
+      {
+       "type": "turn_on",
+       "device_id": "15575806ab7988eb7ac1cd92e9894f9f",
+       "entity_id": "2fba20bb09c7afaae8dbc61479603605",
+       "domain": "light"
+      },
+      {
+       "type": "turn_on",
+       "device_id": "55791bed387aead80620c5dd906af996",
+       "entity_id": "c6456eb2cb409c77637d4a74d6ef1aed",
+       "domain": "light"
+      }
+     ]
+    },
+    {
+     "if": [
+      {
+       "type": "is_motion",
+       "condition": "device",
+       "device_id": "b3734747821eeb0ef3700d56bbcbd458",
+       "entity_id": "fd85b37130827dcc9055e4dd871ecc37",
+       "domain": "binary_sensor"
+      },
+      {
+       "condition": "state",
+       "entity_id": "person.hugo",
+       "state": "home"
+      }
+     ],
+     "then": [
+      {
+       "type": "turn_on",
+       "device_id": "9aa9e79099122eef9d97576c17c290da",
+       "entity_id": "a23153e12071947bc8675b1103b738ad",
+       "domain": "light"
+      }
+     ]
+    },
+    {
+     "if": [
+      {
+       "type": "is_no_motion",
+       "condition": "device",
+       "device_id": "b3734747821eeb0ef3700d56bbcbd458",
+       "entity_id": "fd85b37130827dcc9055e4dd871ecc37",
+       "domain": "binary_sensor"
+      }
+     ],
+     "then": [
+      {
+       "type": "turn_off",
+       "device_id": "b194bd8d770b83a3816d29ef9618980c",
+       "entity_id": "e523b1b3fed8044ba81e2608d113867b",
+       "domain": "light"
+      },
+      {
+       "type": "turn_off",
+       "device_id": "048c34ba953ed7f4a38640c58ca8d697",
+       "entity_id": "adab7a60acf3306f751a3118a9b62bee",
+       "domain": "light"
+      },
+      {
+       "type": "turn_off",
+       "device_id": "15575806ab7988eb7ac1cd92e9894f9f",
+       "entity_id": "2fba20bb09c7afaae8dbc61479603605",
+       "domain": "light"
+      },
+      {
+       "type": "turn_off",
+       "device_id": "9aa9e79099122eef9d97576c17c290da",
+       "entity_id": "a23153e12071947bc8675b1103b738ad",
+       "domain": "light"
+      },
+      {
+       "type": "turn_off",
+       "device_id": "55791bed387aead80620c5dd906af996",
+       "entity_id": "c6456eb2cb409c77637d4a74d6ef1aed",
+       "domain": "light",
+       "enabled": false
+      }
+     ]
+    },
+    {
+     "if": [
+      {
+       "condition": "numeric_state",
+       "entity_id": "sensor.presence_bureau_illuminance",
+       "above": 500
+      }
+     ],
+     "then": [
+      {
+       "type": "turn_off",
+       "device_id": "b194bd8d770b83a3816d29ef9618980c",
+       "entity_id": "e523b1b3fed8044ba81e2608d113867b",
+       "domain": "light"
+      },
+      {
+       "type": "turn_off",
+       "device_id": "048c34ba953ed7f4a38640c58ca8d697",
+       "entity_id": "adab7a60acf3306f751a3118a9b62bee",
+       "domain": "light"
+      },
+      {
+       "type": "turn_off",
+       "device_id": "15575806ab7988eb7ac1cd92e9894f9f",
+       "entity_id": "2fba20bb09c7afaae8dbc61479603605",
+       "domain": "light"
+      },
+      {
+       "type": "turn_off",
+       "device_id": "55791bed387aead80620c5dd906af996",
+       "entity_id": "c6456eb2cb409c77637d4a74d6ef1aed",
+       "domain": "light"
+      }
+     ]
+    }
+   ],
+   "mode": "single",
+   "category": "01HTM33S0V8KXRCW57412M992W"
+  }
+ },
+ {
+  "entity_id": "automation.reset_tireuse",
+  "state": "on",
+  "config": {
+   "id": "1737988793704",
+   "alias": "Reset tireuse",
+   "description": "",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "5411279f7540ed2fafbd91a554b0efb9",
+     "type": "action",
+     "subtype": "double",
+     "trigger": "device"
+    }
+   ],
+   "conditions": [],
+   "actions": [
+    {
+     "action": "counter.reset",
+     "metadata": {},
+     "data": {},
+     "target": {
+      "entity_id": "counter.tireuse"
+     }
+    }
+   ],
+   "mode": "single",
+   "category": "01JJFWERGE9J16FC65DZTHRZHY"
+  }
+ },
+ {
+  "entity_id": "automation.rhasspy_getdate",
+  "state": "on",
+  "config": {
+   "id": "Rhasspy GetDate",
+   "alias": "Rhasspy GetDate",
+   "mode": "single",
+   "triggers": [
+    {
+     "event_data": {},
+     "event_type": "rhasspy_GetDate",
+     "trigger": "event"
+    }
+   ],
+   "actions": [
+    {
+     "service": "mqtt.publish",
+     "data": {
+      "topic": "hermes/dialogueManager/endSession",
+      "payload_template": "{\"sessionId\": \"{{ trigger.event.data._intent.sessionId }}\", \"text\": \"On est le {{ states.sensor.date.state }}\"}"
+     }
+    }
+   ]
+  }
+ },
+ {
+  "entity_id": "automation.serveur_espace_disque_faible",
+  "state": "on",
+  "config": {
+   "id": "1611688574902",
+   "alias": "Serveur Espace disque faible",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "entity_id": "sensor.sabnzbd_disk_free",
+     "below": "20",
+     "trigger": "numeric_state"
+    }
+   ],
+   "actions": [
+    {
+     "service": "notify.pushbullet",
+     "data": {
+      "message": "SabNzbd espace disque faible",
+      "title": "SabNzbd espace disque faible"
+     }
+    }
+   ],
+   "conditions": []
+  }
+ },
+ {
+  "entity_id": "automation.spotify_next",
+  "state": "on",
+  "config": {
+   "id": "1652973882964",
+   "alias": "Spotify Next",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "7748737a4fcd65c20526012c47553e38",
+     "type": "action",
+     "subtype": "slide",
+     "discovery_id": "0x00158d0007081ee7 action_slide",
+     "trigger": "device"
+    }
+   ],
+   "actions": [
+    {
+     "service": "media_player.media_next_track",
+     "data": {},
+     "target": {
+      "entity_id": "media_player.spotify_hugo_bigot"
+     }
+    }
+   ],
+   "conditions": [],
+   "category": "01HTM3DNK9PP2H462DSW9H0C1C"
+  }
+ },
+ {
+  "entity_id": "automation.spotify_volume_down",
+  "state": "on",
+  "config": {
+   "id": "1652973780945",
+   "alias": "Spotify Volume down",
+   "description": "",
+   "mode": "single",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "7748737a4fcd65c20526012c47553e38",
+     "type": "action",
+     "subtype": "rotate_left",
+     "discovery_id": "0x00158d0007081ee7 action_rotate_left",
+     "trigger": "device"
+    }
+   ],
+   "actions": [
+    {
+     "service": "media_player.volume_down",
+     "data": {},
+     "target": {
+      "entity_id": "media_player.spotify_hugo_bigot"
+     }
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "numeric_state",
+     "entity_id": "sensor.cube_action_side",
+     "attribute": "side",
+     "above": "3",
+     "below": "5"
+    }
+   ],
+   "category": "01HTM3DNK9PP2H462DSW9H0C1C"
+  }
+ },
+ {
+  "entity_id": "automation.surveillance_vm_docker",
+  "state": "on",
+  "config": {
+   "id": "1784741613477",
+   "alias": "Surveillance VM Docker",
+   "description": "Alerte sur le One Plus 12 : (1) VM Docker (192.0.2.25) injoignable au ping pendant 5 min (gel VM — cf. kernel Proxmox 7.0 juillet 2026), (2) retour de la VM après toute coupure > 90 s, avec durée d'indisponibilité dans le message — capte aussi les panic-reboots express (~1-2 min) trop courts pour déclencher l'alerte de panne, (3) conteneur SWAG/nginx arrêté alors que la VM répond (via Portainer), avec rétablissement. Le seuil de 90 s filtre les micro-pertes de ping d'un seul cycle de polling. Template utilisé pour la durée car aucune condition native ne mesure le temps passé dans l'état précédent.",
+   "triggers": [
+    {
+     "entity_id": "binary_sensor.vm_docker",
+     "for": {
+      "minutes": 5
+     },
+     "from": "on",
+     "id": "panne_vm",
+     "to": "off",
+     "trigger": "state"
+    },
+    {
+     "entity_id": "binary_sensor.vm_docker",
+     "from": "off",
+     "id": "retour_vm",
+     "to": "on",
+     "trigger": "state"
+    },
+    {
+     "entity_id": "binary_sensor.swag_status",
+     "for": {
+      "minutes": 5
+     },
+     "from": "on",
+     "id": "panne_nginx",
+     "to": "off",
+     "trigger": "state"
+    },
+    {
+     "entity_id": "binary_sensor.swag_status",
+     "for": {
+      "minutes": 2
+     },
+     "from": "off",
+     "id": "retour_nginx",
+     "to": "on",
+     "trigger": "state"
+    }
+   ],
+   "actions": [
+    {
+     "choose": [
+      {
+       "conditions": [
+        {
+         "condition": "trigger",
+         "id": "panne_vm"
+        }
+       ],
+       "sequence": [
+        {
+         "action": "notify.mobile_app_one_plus_12",
+         "data": {
+          "data": {
+           "channel": "Serveur",
+           "importance": "high",
+           "tag": "vm_docker_down"
+          },
+          "message": "La VM Docker (192.0.2.25) ne répond plus au ping depuis 5 minutes. Nginx est probablement down.",
+          "title": "⚠️ VM Docker injoignable"
+         }
+        }
+       ]
+      },
+      {
+       "conditions": [
+        {
+         "condition": "trigger",
+         "id": "retour_vm"
+        },
+        {
+         "condition": "template",
+         "value_template": "{{ (now() - trigger.from_state.last_changed).total_seconds() > 90 }}"
+        }
+       ],
+       "sequence": [
+        {
+         "action": "notify.mobile_app_one_plus_12",
+         "data": {
+          "data": {
+           "channel": "Serveur",
+           "tag": "vm_docker_down"
+          },
+          "message": "La VM Docker répond de nouveau après {{ ((now() - trigger.from_state.last_changed).total_seconds() / 60) | round(1) }} min d'indisponibilité. Si aucune alerte n'a précédé, c'était probablement un redémarrage automatique (panic-reboot) — vérifier journalctl -b -1 -k.",
+          "title": "ℹ️ VM Docker : redémarrage détecté"
+         }
+        }
+       ]
+      },
+      {
+       "conditions": [
+        {
+         "condition": "trigger",
+         "id": "panne_nginx"
+        }
+       ],
+       "sequence": [
+        {
+         "action": "notify.mobile_app_one_plus_12",
+         "data": {
+          "data": {
+           "channel": "Serveur",
+           "importance": "high",
+           "tag": "nginx_down"
+          },
+          "message": "Le conteneur SWAG (nginx) est arrêté depuis 5 minutes alors que la VM répond.",
+          "title": "⚠️ Conteneur nginx arrêté"
+         }
+        }
+       ]
+      },
+      {
+       "conditions": [
+        {
+         "condition": "trigger",
+         "id": "retour_nginx"
+        }
+       ],
+       "sequence": [
+        {
+         "action": "notify.mobile_app_one_plus_12",
+         "data": {
+          "data": {
+           "channel": "Serveur",
+           "tag": "nginx_down"
+          },
+          "message": "Le conteneur SWAG (nginx) est reparti.",
+          "title": "✅ Conteneur nginx de retour"
+         }
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "mode": "queued"
+  }
+ },
+ {
+  "entity_id": "automation.temperature_bureau",
+  "state": "on",
+  "config": {
+   "id": "1700735879681",
+   "alias": "Temperature Bureau",
+   "description": "",
+   "triggers": [
+    {
+     "minutes": "/5",
+     "trigger": "time_pattern"
+    }
+   ],
+   "actions": [
+    {
+     "service": "mqtt.publish",
+     "data": {
+      "qos": 0,
+      "retain": false,
+      "payload": "{\n  \"text\": \"Bur:{{ states.sensor.temperature_chambre_temperature.state | round() }}\",\n  \"icon\": \"2422\",\n  \"rainbow\": false,\n  \"center\": true,\n  \"pushIcon\": 0,\n  \"textCase\": 0,\n  \"textOffset\": -1,\n  \"duration\": 7,\n  \"progress\": -1\n}",
+      "topic": "awtrix_ulanzi/custom/temp_bureau"
+     }
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "device",
+     "type": "is_on",
+     "device_id": "9aa9e79099122eef9d97576c17c290da",
+     "entity_id": "a23153e12071947bc8675b1103b738ad",
+     "domain": "light"
+    }
+   ],
+   "category": "01HTM32Z922QPC6C1W4KNS2CYM"
+  }
+ },
+ {
+  "entity_id": "automation.temperature_exterieure",
+  "state": "on",
+  "config": {
+   "id": "1700736022498",
+   "alias": "Temperature Exterieure",
+   "description": "",
+   "triggers": [
+    {
+     "minutes": "/5",
+     "trigger": "time_pattern"
+    }
+   ],
+   "actions": [
+    {
+     "service": "mqtt.publish",
+     "data": {
+      "qos": 0,
+      "retain": false,
+      "payload": "{\n  \"text\": \"Ext:{{ states.sensor.temperature_exterieur_temperature.state | round() }}\",\n  \"icon\": \"2422\",\n  \"rainbow\": false,\n  \"center\": true,\n  \"pushIcon\": 0,\n  \"textCase\": 0,\n  \"textOffset\": -1,\n  \"duration\": 7,\n  \"progress\": -1\n}",
+      "topic": "awtrix_ulanzi/custom/temp_exterieur"
+     }
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "device",
+     "type": "is_on",
+     "device_id": "9aa9e79099122eef9d97576c17c290da",
+     "entity_id": "a23153e12071947bc8675b1103b738ad",
+     "domain": "light"
+    }
+   ],
+   "category": "01HTM32Z922QPC6C1W4KNS2CYM"
+  }
+ },
+ {
+  "entity_id": "automation.test_cube",
+  "state": "on",
+  "config": {
+   "id": "1646905757825",
+   "alias": "Test Cube",
+   "description": "",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "7748737a4fcd65c20526012c47553e38",
+     "type": "action",
+     "subtype": "shake",
+     "discovery_id": "0x00158d0007081ee7 action_shake",
+     "trigger": "device"
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "numeric_state",
+     "entity_id": "sensor.cube_action_side",
+     "below": "5",
+     "attribute": "side"
+    }
+   ],
+   "actions": [
+    {
+     "type": "turn_off",
+     "device_id": "b194bd8d770b83a3816d29ef9618980c",
+     "entity_id": "e523b1b3fed8044ba81e2608d113867b",
+     "domain": "light"
+    },
+    {
+     "type": "turn_off",
+     "device_id": "15575806ab7988eb7ac1cd92e9894f9f",
+     "entity_id": "2fba20bb09c7afaae8dbc61479603605",
+     "domain": "light"
+    },
+    {
+     "type": "turn_off",
+     "device_id": "048c34ba953ed7f4a38640c58ca8d697",
+     "entity_id": "adab7a60acf3306f751a3118a9b62bee",
+     "domain": "light"
+    },
+    {
+     "type": "turn_off",
+     "device_id": "9aa9e79099122eef9d97576c17c290da",
+     "entity_id": "a23153e12071947bc8675b1103b738ad",
+     "domain": "light"
+    },
+    {
+     "type": "turn_off",
+     "device_id": "27bb77c5d37bf0b7e774741517e4c5df",
+     "entity_id": "a95ed30dd926062d478ea38e27775edb",
+     "domain": "switch"
+    },
+    {
+     "type": "turn_off",
+     "device_id": "55791bed387aead80620c5dd906af996",
+     "entity_id": "c6456eb2cb409c77637d4a74d6ef1aed",
+     "domain": "light"
+    }
+   ],
+   "mode": "single",
+   "category": "01HTM33S0V8KXRCW57412M992W"
+  }
+ },
+ {
+  "entity_id": "automation.tireuse",
+  "state": "on",
+  "config": {
+   "id": "1737847524464",
+   "alias": "Tireuse ",
+   "description": "",
+   "triggers": [
+    {
+     "domain": "mqtt",
+     "device_id": "5411279f7540ed2fafbd91a554b0efb9",
+     "type": "action",
+     "subtype": "single",
+     "trigger": "device"
+    }
+   ],
+   "conditions": [
+    {
+     "condition": "numeric_state",
+     "entity_id": "counter.tireuse",
+     "above": 0
+    },
+    {
+     "condition": "template",
+     "value_template": "{{ (as_timestamp(now()) - as_timestamp(states.automation.tireuse.attributes.last_triggered | default(0)) | int > 1)}}"
+    }
+   ],
+   "actions": [
+    {
+     "action": "counter.decrement",
+     "metadata": {},
+     "data": {},
+     "target": {
+      "entity_id": "counter.tireuse"
+     }
+    }
+   ],
+   "mode": "single",
+   "category": "01JJFWERGE9J16FC65DZTHRZHY"
+  }
+ }
+]

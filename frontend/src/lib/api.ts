@@ -33,3 +33,35 @@ export function explainError(r: Extract<CallResult, { ok: false }>): string {
 	if (r.status === 403) return 'Votre compte ne peut pas envoyer de commandes.';
 	return `Échec de la commande : ${r.error}`;
 }
+
+/** Requête JSON générique vers l'API (le message d'erreur du serveur est conservé). */
+export async function request<T>(
+	method: 'GET' | 'POST' | 'PUT' | 'DELETE',
+	path: string,
+	body?: unknown,
+	fetcher: typeof fetch = fetch
+): Promise<{ ok: true; data: T } | { ok: false; status: number; error: string }> {
+	try {
+		const r = await fetcher(`/api/v1/${path}`, {
+			method,
+			headers: body === undefined ? undefined : { 'content-type': 'application/json' },
+			body: body === undefined ? undefined : JSON.stringify(body)
+		});
+		const json: unknown = await r.json().catch(() => null);
+		if (r.ok) return { ok: true, data: json as T };
+		const error =
+			json && typeof json === 'object' && 'error' in json ? String(json.error) : `HTTP ${r.status}`;
+		return { ok: false, status: r.status, error };
+	} catch (e) {
+		return { ok: false, status: 0, error: e instanceof Error ? e.message : String(e) };
+	}
+}
+
+/** Libellés français de l'issue d'une exécution. */
+export const OUTCOME_LABELS: Record<string, string> = {
+	finished: 'Terminée',
+	condition_failed: 'Conditions non remplies',
+	stopped: 'Arrêtée',
+	error: 'Erreur',
+	cancelled: 'Annulée'
+};

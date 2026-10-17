@@ -87,6 +87,8 @@ pub struct Config {
     pub retention_days: i64,
     pub ha: Option<(Url, String)>,
     pub fixtures: Option<PathBuf>,
+    /// HA blueprints copied here are expanded when automations are imported.
+    pub blueprints_dir: PathBuf,
     pub mqtt: Option<MqttSettings>,
     pub portainer: Option<PortainerSettings>,
     pub hue: Option<HueSettings>,
@@ -191,6 +193,9 @@ impl Config {
             retention_days,
             ha,
             fixtures: get("RUSTHOME_FIXTURES").map(PathBuf::from),
+            blueprints_dir: PathBuf::from(
+                get("RUSTHOME_BLUEPRINTS_DIR").unwrap_or("var/blueprints"),
+            ),
         })
     }
 }

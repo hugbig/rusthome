@@ -157,6 +157,44 @@ impl Recorder {
         Ok(n)
     }
 
+    // ---------- automations ----------
+
+    /// Stores one automation record (document, entity id, enabled, issues).
+    pub async fn save_automation(
+        &self,
+        id: &str,
+        record: &serde_json::Value,
+        now: DateTime<Utc>,
+    ) -> Result<(), RecorderError> {
+        sqlx::query(
+            "INSERT INTO automations (id, data, updated_at) VALUES (?, ?, ?)
+             ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at",
+        )
+        .bind(id)
+        .bind(serde_json::to_string(record)?)
+        .bind(now.to_rfc3339())
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    pub async fn delete_automation(&self, id: &str) -> Result<bool, RecorderError> {
+        let res = sqlx::query("DELETE FROM automations WHERE id = ?")
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
+        Ok(res.rows_affected() > 0)
+    }
+
+    pub async fn load_automations(&self) -> Result<Vec<serde_json::Value>, RecorderError> {
+        let rows = sqlx::query("SELECT data FROM automations ORDER BY id")
+            .fetch_all(&self.pool)
+            .await?;
+        rows.iter()
+            .map(|r| Ok(serde_json::from_str(r.get::<&str, _>("data"))?))
+            .collect()
+    }
+
     // ---------- history ----------
 
     pub async fn record_state(&self, s: &State) -> Result<(), RecorderError> {
@@ -240,6 +278,7 @@ impl Recorder {
                     Some(s) if !self.is_excluded(&hub, &s.entity_id) => self.record_state(s).await,
                     _ => Ok(()),
                 },
+                Event::Custom { .. } => Ok(()),
             };
             if let Err(e) = res {
                 tracing::error!(error = %e, "recorder write failed");
@@ -347,6 +386,31 @@ mod tests {
         }
         task.abort();
         assert_eq!(fresh.areas().len(), 50);
+    }
+
+    #[tokio::test]
+    async fn automations_round_trip() {
+        let rec = mem().await;
+        let now = Utc.with_ymd_and_hms(2026, 10, 17, 12, 0, 0).unwrap();
+        rec.save_automation(
+            "a1",
+            &serde_json::json!({"doc": {"id": "a1"}, "enabled": false}),
+            now,
+        )
+        .await
+        .unwrap();
+        rec.save_automation(
+            "a1",
+            &serde_json::json!({"doc": {"id": "a1"}, "enabled": true}),
+            now,
+        )
+        .await
+        .unwrap();
+        let all = rec.load_automations().await.unwrap();
+        assert_eq!(all.len(), 1);
+        assert_eq!(all[0]["enabled"], true);
+        assert!(rec.delete_automation("a1").await.unwrap());
+        assert_eq!(rec.load_automations().await.unwrap().len(), 0);
     }
 
     #[tokio::test]

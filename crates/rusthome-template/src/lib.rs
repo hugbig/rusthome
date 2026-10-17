@@ -1,9 +1,11 @@
 //! Home Assistant flavoured Jinja on top of minijinja (cf. spec §6.4).
 //!
-//! M1 subset: `states` (object and function), `is_state`, `state_attr`,
-//! `now()` (with `strftime`/`isoformat`/`hour`/`minute`), `as_timestamp`,
-//! `iif`. Date arithmetic (`now() - x`, `.total_seconds()`) comes with the
-//! automation engine (M3).
+//! Covers every template of the real corpus (cf. inventaire/02 §4):
+//! `states` (object and function), `is_state`, `state_attr`, `now()` (with
+//! `strftime`/`isoformat`/`hour`/`minute`), `as_timestamp`, `iif`, `random`.
+//! Date arithmetic `(now() - x).total_seconds()` is rewritten before
+//! rendering into `seconds_since(x)`: minijinja cannot subtract objects, and
+//! the user's YAML stays untouched.
 
 use std::sync::Arc;
 
@@ -26,6 +28,9 @@ impl TemplateEngine {
     #[must_use]
     pub fn new(states: Arc<StateMachine>, clock: Arc<dyn Clock>, tz: Tz) -> Self {
         let mut env = Environment::new();
+        // Python methods used by HA templates: `dict.get`, `str.upper`, `items()`…
+        env.set_unknown_method_callback(minijinja_contrib::pycompat::unknown_method_callback);
+        let clock_for_since = Arc::clone(&clock);
 
         env.add_global(
             "states",
@@ -63,6 +68,11 @@ impl TemplateEngine {
             if let Some(dt) = v.downcast_object_ref::<DateTimeObject>() {
                 return Ok(timestamp(&dt.0.with_timezone(&Utc)));
             }
+            // `as_timestamp(x | default(0))` passes a number through.
+            if let Some(n) = v.as_i64() {
+                #[allow(clippy::cast_precision_loss)]
+                return Ok(n as f64);
+            }
             let raw = v.as_str().ok_or_else(|| {
                 Error::new(
                     ErrorKind::InvalidOperation,
@@ -77,6 +87,35 @@ impl TemplateEngine {
                         format!("invalid datetime: {e}"),
                     )
                 })
+        });
+
+        let clock2 = Arc::clone(&clock_for_since);
+        env.add_function("seconds_since", move |v: Value| -> Result<f64, Error> {
+            let then = if let Some(dt) = v.downcast_object_ref::<DateTimeObject>() {
+                dt.0.with_timezone(&Utc)
+            } else {
+                let raw = v.as_str().ok_or_else(|| {
+                    Error::new(ErrorKind::InvalidOperation, "expected a datetime")
+                })?;
+                DateTime::parse_from_rfc3339(raw)
+                    .map_err(|e| {
+                        Error::new(
+                            ErrorKind::InvalidOperation,
+                            format!("invalid datetime: {e}"),
+                        )
+                    })?
+                    .with_timezone(&Utc)
+            };
+            #[allow(clippy::cast_precision_loss)]
+            Ok((clock2.now() - then).num_milliseconds() as f64 / 1000.0)
+        });
+
+        env.add_filter("random", |v: Value| -> Result<Value, Error> {
+            let items: Vec<Value> = v.try_iter()?.collect();
+            if items.is_empty() {
+                return Ok(Value::from(()));
+            }
+            Ok(items[fastrand::usize(..items.len())].clone())
         });
 
         env.add_function(
@@ -94,8 +133,20 @@ impl TemplateEngine {
     }
 
     pub fn render(&self, source: &str, ctx: &serde_json::Value) -> Result<String, TemplateError> {
-        Ok(self.env.render_str(source, Value::from(Serde(ctx)))?)
+        Ok(self
+            .env
+            .render_str(&preprocess(source), Value::from(Serde(ctx)))?)
     }
+}
+
+/// `(now() - EXPR).total_seconds()` → `seconds_since(EXPR)`.
+#[must_use]
+pub fn preprocess(source: &str) -> std::borrow::Cow<'_, str> {
+    static RE: std::sync::LazyLock<regex::Regex> = std::sync::LazyLock::new(|| {
+        regex::Regex::new(r"\(\s*now\(\)\s*-\s*([A-Za-z_][\w.]*)\s*\)\s*\.total_seconds\(\)")
+            .unwrap_or_else(|_| unreachable!())
+    });
+    RE.replace_all(source, "seconds_since($1)")
 }
 
 #[allow(clippy::cast_precision_loss)] // sub-second precision of a timestamp is irrelevant here
@@ -235,6 +286,12 @@ mod tests {
             Map::new(),
             Context::default(),
         );
+        sm.set(
+            EntityId::parse("automation.tireuse").unwrap(),
+            "on",
+            Map::new(),
+            Context::default(),
+        );
         TemplateEngine::new(sm, clock, chrono_tz::Europe::Paris)
     }
 
@@ -283,6 +340,58 @@ mod tests {
         assert_eq!(r("{{ now().strftime('%H:%M') }}"), "12:05");
         assert_eq!(r("{{ now().hour }}"), "12");
         assert_eq!(r("{{ as_timestamp(now()) }}"), "1792231500.0");
+    }
+
+    #[test]
+    fn real_corpus_date_arithmetic() {
+        let e = engine();
+        // 10:05:00 now; state changed 3 minutes earlier
+        let ctx = json!({"trigger": {"from_state": {"last_changed": "2026-10-17T10:02:00+00:00"}}});
+        assert_eq!(
+            e.render(
+                "{{ (now() - trigger.from_state.last_changed).total_seconds() > 90 }}",
+                &ctx
+            )
+            .unwrap(),
+            "True"
+        );
+        assert_eq!(
+            e.render("{{ ((now() - trigger.from_state.last_changed).total_seconds() / 60) | round(1) }} min", &ctx).unwrap(),
+            "3.0 min"
+        );
+        // Automation never triggered: `last_triggered` is null → default(0).
+        assert_eq!(
+            e.render("{{ as_timestamp(states.automation.tireuse.attributes.last_triggered | default(0)) }}", &json!({})).unwrap(),
+            "0.0"
+        );
+    }
+
+    #[test]
+    fn badge_lookup_with_dict_get() {
+        // Simplified from the real « Badge » automation (UIDs replaced).
+        let src = "{% set u = ((trigger.tag_id | default('', true)) or (trigger.event.data.tag_id | default('', true))) | upper | trim %}{% set noms = {'AA-00-00-05': 'Hugo', 'AA-00-00-01': 'Léo'} %}{{ noms.get(u, 'Quelqu un') }}";
+        let e = engine();
+        assert_eq!(
+            e.render(src, &json!({"trigger": {"tag_id": "aa-00-00-01 "}}))
+                .unwrap(),
+            "Léo"
+        );
+        assert_eq!(
+            e.render(
+                src,
+                &json!({"trigger": {"event": {"data": {"tag_id": "ZZ"}}}})
+            )
+            .unwrap(),
+            "Quelqu un"
+        );
+    }
+
+    #[test]
+    fn random_picks_an_element() {
+        let out = engine()
+            .render("{{ ['Radar', 'Snake'] | random }}", &json!({}))
+            .unwrap();
+        assert!(out == "Radar" || out == "Snake");
     }
 
     #[test]

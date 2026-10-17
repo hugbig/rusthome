@@ -117,7 +117,9 @@ impl Z2m {
             reg.upsert_device(Device {
                 id: device_id,
                 integration: INTEGRATION.into(),
-                name: d.friendly_name.trim().to_owned(),
+                // Exact name: it is part of the MQTT topics (`"Interrupteur sans fil "`
+                // has a trailing space in the real installation).
+                name: d.friendly_name.clone(),
                 manufacturer: def
                     .and_then(|x| x.vendor.clone())
                     .or_else(|| d.manufacturer.clone()),

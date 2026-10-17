@@ -87,6 +87,7 @@ mod tests {
                 hub: hub.clone(),
                 recorder: None,
                 auth: AuthMode::Dev,
+                automations: None,
             },
             None,
         );

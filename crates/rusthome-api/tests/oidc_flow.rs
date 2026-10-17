@@ -74,6 +74,7 @@ fn app() -> Router {
             hub,
             recorder: None,
             auth: AuthMode::Oidc(Arc::new(oidc)),
+            automations: None,
         },
         None,
     )

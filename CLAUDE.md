@@ -51,3 +51,6 @@ Livrable : un tableau **à reproduire / à simplifier / à abandonner**, puis se
 - Remplacer les notifications de l'app compagnon (ex. ntfy).
 - **Migration progressive** : le clone tourne en parallèle de HA (miroir en lecture), puis reprend les automatismes un par un. Ne jamais couper HA tant que l'alarme en dépend.
 - Ordre : cœur et modèle de données solides d'abord, éditeurs visuels ensuite.
+
+## Étape 5 : jalon M3 (moteur d'automatismes), terminé le 2026-10-17 (branche `feat/m3-automatismes`)
+Crate `rusthome-automation` : normalisation du format HA (anciennes clés, `device_id` → entity_id / topic MQTT, blueprints développés), compilation typée avec erreurs localisées, moteur (state, numeric_state, time, time_pattern, event, tag, mqtt, boutons Hue, startup ; modes single/restart/queued/parallel ; `for` ; traces). Import réel : 43 automatismes, 41 valides, **tous désactivés** ; 2 référencent une entité supprimée de HA (`presence_bureau`, `test_cube`). Templates : tout le corpus est couvert (`(now() - x).total_seconds()` réécrit en `seconds_since(x)`, `dict.get` via pycompat, filtre `random`). Pas encore : `sun`/`zone` (pas de localisation), `template` trigger, éditeur visuel (M5).

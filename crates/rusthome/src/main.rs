@@ -66,7 +66,9 @@ async fn main() -> anyhow::Result<()> {
         (None, None) => tracing::warn!("no HA_URL/HA_TOKEN nor RUSTHOME_FIXTURES: starting empty"),
     }
 
-    start_integrations(&cfg, &hub, mirror_ready.as_ref())?;
+    let engine = start_automations(&hub, &recorder, cfg.tz).await?;
+
+    start_integrations(&cfg, &hub, mirror_ready.as_ref(), &engine)?;
 
     let auth = match &cfg.auth {
         AuthConfig::Dev => AuthMode::Dev,
@@ -95,6 +97,18 @@ async fn main() -> anyhow::Result<()> {
             hub,
             recorder: Some(recorder),
             auth,
+            automations: Some(rusthome_api::automations::AutomationsCtx {
+                engine,
+                blueprints_dir: Some(cfg.blueprints_dir.clone()),
+                z2m_base: cfg
+                    .mqtt
+                    .as_ref()
+                    .map_or_else(|| "zigbee2mqtt".to_owned(), |m| m.z2m_base_topic.clone()),
+                ha: cfg.ha.as_ref().map(|(url, token)| BridgeConfig {
+                    url: url.clone(),
+                    token: token.clone(),
+                }),
+            }),
         },
         cfg.static_dir.clone(),
     );
@@ -110,14 +124,33 @@ async fn main() -> anyhow::Result<()> {
 
 /// Native integrations (M2). Each waits for the first HA snapshot before
 /// taking over HA entities.
+/// Automation engine (M3): persisted automations are reloaded as they were.
+async fn start_automations(
+    hub: &Hub,
+    recorder: &Recorder,
+    tz: chrono_tz::Tz,
+) -> anyhow::Result<Arc<rusthome_automation::Engine>> {
+    let engine = rusthome_automation::Engine::new(hub.clone(), tz);
+    let mut loaded = 0;
+    for rec in recorder.load_automations().await? {
+        if rusthome_automation::import::load_record(&engine, &rec).is_some() {
+            loaded += 1;
+        }
+    }
+    tracing::info!(loaded, "automations loaded");
+    tokio::spawn(Arc::clone(&engine).run());
+    Ok(engine)
+}
+
 fn start_integrations(
     cfg: &Config,
     hub: &Hub,
     mirror_ready: Option<&tokio::sync::watch::Receiver<bool>>,
+    engine: &Arc<rusthome_automation::Engine>,
 ) -> anyhow::Result<()> {
     let hub = hub.clone();
     if let Some(m) = &cfg.mqtt {
-        start_mqtt(&hub, m, mirror_ready.cloned())?;
+        start_mqtt(&hub, m, mirror_ready.cloned(), engine)?;
     }
     if let Some(h) = &cfg.hue {
         let hue = rusthome_hue::Hue::new(
@@ -161,6 +194,7 @@ fn start_mqtt(
     hub: &Hub,
     m: &config::MqttSettings,
     mirror_ready: Option<tokio::sync::watch::Receiver<bool>>,
+    engine: &Arc<rusthome_automation::Engine>,
 ) -> anyhow::Result<()> {
     let (mqtt, eventloop) = rusthome_mqtt::Mqtt::new(&rusthome_mqtt::MqttConfig {
         url: m.url.clone(),
@@ -174,6 +208,7 @@ fn start_mqtt(
         tracing::warn!(url = %m.url, "MQTT in READ-ONLY mode: commands to devices are refused");
     }
     tokio::spawn(rusthome_mqtt::run(mqtt.clone(), eventloop));
+    feed_automations_from_mqtt(&mqtt, engine);
     let z2m = rusthome_z2m::Z2m::new(hub.clone(), &m.z2m_base_topic, Arc::new(mqtt.clone()));
     z2m.register_services();
     if let Some(url) = &m.frigate_url {
@@ -197,6 +232,35 @@ fn start_mqtt(
         z2m.run(mqtt).await;
     });
     Ok(())
+}
+
+/// MQTT triggers: forwards every message to the engine and keeps the
+/// subscriptions in line with the automations (checked every 10 s).
+fn feed_automations_from_mqtt(
+    mqtt: &rusthome_mqtt::Mqtt,
+    engine: &Arc<rusthome_automation::Engine>,
+) {
+    let (mut rx, eng) = (mqtt.messages(), Arc::clone(engine));
+    tokio::spawn(async move {
+        while let Ok(m) = rx.recv().await {
+            if let Ok(text) = std::str::from_utf8(&m.payload) {
+                eng.handle_mqtt(&m.topic, text);
+            }
+        }
+    });
+    let (mqtt, eng) = (mqtt.clone(), Arc::clone(engine));
+    tokio::spawn(async move {
+        let mut subscribed = std::collections::HashSet::new();
+        let mut tick = tokio::time::interval(std::time::Duration::from_secs(10));
+        loop {
+            tick.tick().await;
+            for topic in eng.mqtt_topics() {
+                if !subscribed.contains(&topic) && mqtt.subscribe(&topic).await.is_ok() {
+                    subscribed.insert(topic);
+                }
+            }
+        }
+    });
 }
 
 /// Native integrations wait for the first HA snapshot to take over the HA

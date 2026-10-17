@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { callService, explainError } from './api';
+import { callService, explainError, request } from './api';
 
 const fakeFetch = (status: number, body: unknown) =>
 	(async () => new Response(JSON.stringify(body), { status })) as unknown as typeof fetch;
@@ -39,5 +39,29 @@ describe('callService', () => {
 				error: 'light.salon is still driven by Home Assistant (read-only mirror)'
 			})
 		).toContain('Home Assistant');
+	});
+});
+
+describe('request', () => {
+	it('envoie le corps en JSON et renvoie les données', async () => {
+		let seen: RequestInit | undefined;
+		const f = (async (_url: string, init?: RequestInit) => {
+			seen = init;
+			return new Response(JSON.stringify({ id: 'a1' }), { status: 200 });
+		}) as unknown as typeof fetch;
+		const r = await request<{ id: string }>('PUT', 'automations/a1', { yaml: 'x' }, f);
+		expect(r).toEqual({ ok: true, data: { id: 'a1' } });
+		expect(seen?.method).toBe('PUT');
+		expect(seen?.body).toBe('{"yaml":"x"}');
+	});
+
+	it("remonte le message d'erreur du serveur", async () => {
+		const r = await request(
+			'POST',
+			'automations/x/enable',
+			undefined,
+			fakeFetch(409, { error: 'has errors' })
+		);
+		expect(r).toEqual({ ok: false, status: 409, error: 'has errors' });
 	});
 });

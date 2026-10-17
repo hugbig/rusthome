@@ -22,6 +22,7 @@
 	const links = [
 		{ href: resolve('/'), label: "Vue d'ensemble" },
 		{ href: resolve('/entites'), label: 'Entités' },
+		{ href: resolve('/automatismes'), label: 'Automatismes' },
 		{ href: resolve('/pieces'), label: 'Pièces' },
 		{ href: resolve('/appareils'), label: 'Appareils' }
 	];

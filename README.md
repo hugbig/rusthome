@@ -16,7 +16,7 @@ Domotique maison en <strong>Rust</strong> et <strong>Svelte 5</strong>, pensée 
 |---|---|---|
 | **M1** : cœur | Modèle, registres (pièces, appareils, entités), états, historique SQLite, API REST + WebSocket, connexion Authelia (OIDC), miroir de Home Assistant en lecture seule, interface de consultation | ✅ |
 | **M2** : intégrations natives | Zigbee2MQTT, Philips Hue, Portainer, Frigate. Les `entity_id` de HA sont repris à l'identique | ✅ (HomeKit reporté) |
-| **M3** : automatismes | Import du YAML HA, moteur (déclencheurs, conditions, actions, modes), traces, éditeur YAML | à venir |
+| **M3** : automatismes | Import des automatismes HA (blueprints compris, `device_id` traduits), moteur (déclencheurs, conditions, actions, modes), traces, éditeur YAML | ✅ |
 | **M4** : dashboards | Cartes, import Lovelace, profil tablette murale | à venir |
 | M5 à M9 | Éditeur visuel, ESPHome, HomeKit, alarme, autres intégrations | à venir |
 
@@ -26,6 +26,7 @@ Le détail est dans [docs/architecture.md](docs/architecture.md) (§13 pour les 
 
 - **Migration progressive.** RustHome tourne à côté de Home Assistant. Il lit d'abord HA, puis reprend les sources une à une, en conservant les mêmes `entity_id`. Les automatismes et dashboards existants restent ainsi valides.
 - **Lecture seule par défaut.** Pendant le développement, RustHome ne commande aucun appareil réel : MQTT et Hue sont en lecture seule, Portainer ne sait faire que des GET, et le pont HA ne peut pas appeler de service. Chaque bascule se fait explicitement, phase par phase.
+- **Automatismes importés désactivés.** Les automatismes repris de HA arrivent désactivés et s'activent un par un. Même activés, ils ne peuvent rien piloter tant que les intégrations restent en lecture seule.
 - **Une seule source par entité.** Une entité reprise par une intégration native n'est plus écrasée par le miroir HA.
 - **Qualité.** Tests unitaires obligatoires, `clippy` en mode strict, types TypeScript générés depuis Rust. `just check` doit passer avant tout commit.
 
@@ -44,6 +45,7 @@ crates/
   rusthome-hue        Philips Hue (CLIP v2, flux d'événements)
   rusthome-portainer  supervision des conteneurs Docker
   rusthome-frigate    Frigate (caméras, détection)
+  rusthome-automation moteur d'automatismes (import HA, exécution, traces)
   rusthome-api        API REST + WebSocket, OIDC
   rusthome            binaire
 frontend/             interface SvelteKit (Svelte 5, TypeScript)
@@ -82,7 +84,8 @@ Tout passe par des variables d'environnement, documentées dans [.env.example](.
 - Frigate : `RUSTHOME_FRIGATE_URL` ;
 - Hue : `RUSTHOME_HUE_*` ;
 - Portainer : `RUSTHOME_PORTAINER_*` ;
-- authentification : `RUSTHOME_AUTH`, `RUSTHOME_OIDC_*` (voir [docs/authelia.md](docs/authelia.md)).
+- authentification : `RUSTHOME_AUTH`, `RUSTHOME_OIDC_*` (voir [docs/authelia.md](docs/authelia.md)) ;
+- blueprints HA à développer à l'import : `RUSTHOME_BLUEPRINTS_DIR` (défaut `var/blueprints`).
 
 Les secrets restent dans `.env`, qui n'est jamais versionné.
 

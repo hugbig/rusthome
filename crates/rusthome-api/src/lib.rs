@@ -4,6 +4,7 @@
 //! authentication (`dev` mode or OIDC through Authelia).
 
 mod auth;
+pub mod automations;
 pub mod oidc;
 mod ws;
 
@@ -30,6 +31,7 @@ pub struct ApiState {
     pub hub: Hub,
     pub recorder: Option<Recorder>,
     pub auth: AuthMode,
+    pub automations: Option<automations::AutomationsCtx>,
 }
 
 /// Builds the router. `static_dir`, when set, serves the built frontend
@@ -42,6 +44,33 @@ pub fn router(state: ApiState, static_dir: Option<PathBuf>) -> Router {
         .route("/registry/{kind}", get(registry))
         .route("/history/{entity_id}", get(history))
         .route("/ws", get(ws::handler))
+        .route(
+            "/automations",
+            get(automations::list).post(automations::create),
+        )
+        .route(
+            "/automations/import-ha",
+            axum::routing::post(automations::import_ha),
+        )
+        .route(
+            "/automations/{id}",
+            get(automations::get_one)
+                .put(automations::put_one)
+                .delete(automations::delete_one),
+        )
+        .route(
+            "/automations/{id}/enable",
+            axum::routing::post(automations::enable),
+        )
+        .route(
+            "/automations/{id}/disable",
+            axum::routing::post(automations::disable),
+        )
+        .route(
+            "/automations/{id}/run",
+            axum::routing::post(automations::run_now),
+        )
+        .route("/automations/{id}/traces", get(automations::traces))
         .route("/services", get(list_services))
         .route(
             "/services/{domain}/{service}",
@@ -68,7 +97,7 @@ pub fn router(state: ApiState, static_dir: Option<PathBuf>) -> Router {
     app.layer(TraceLayer::new_for_http())
 }
 
-enum ApiError {
+pub(crate) enum ApiError {
     NotFound(String),
     BadRequest(String),
     Forbidden(String),
@@ -247,6 +276,15 @@ mod tests {
                     hub: hub.clone(),
                     recorder: None,
                     auth,
+                    automations: Some(automations::AutomationsCtx {
+                        engine: rusthome_automation::Engine::new(
+                            hub.clone(),
+                            chrono_tz::Europe::Paris,
+                        ),
+                        blueprints_dir: None,
+                        z2m_base: "zigbee2mqtt".into(),
+                        ha: None,
+                    }),
                 },
                 None,
             ),
@@ -381,6 +419,97 @@ mod tests {
                 .unwrap()
                 .len(),
             2
+        );
+    }
+
+    #[tokio::test]
+    async fn automations_yaml_round_trip_and_enable() {
+        let (app, hub) = app(AuthMode::Dev);
+        let yaml = "alias: Éteindre radiateur salon\ntrigger:\n  - platform: state\n    entity_id: light.salon\n    to: 'off'\naction:\n  - service: switch.turn_off\n    target:\n      entity_id: switch.radiateur\n";
+        let (code, info) = post_json(
+            app.clone(),
+            "/api/v1/automations",
+            serde_json::json!({ "yaml": yaml }),
+        )
+        .await;
+        assert_eq!(code, StatusCode::OK, "{info}");
+        assert_eq!(info["entity_id"], "automation.eteindre_radiateur_salon");
+        assert_eq!(info["enabled"], false, "new automations start disabled");
+        let id = info["id"].as_str().unwrap().to_owned();
+
+        // Stored in the modern spelling.
+        let (_, got) = get_json(app.clone(), &format!("/api/v1/automations/{id}")).await;
+        let stored = got["yaml"].as_str().unwrap();
+        assert!(
+            stored.contains("triggers:") && stored.contains("action: switch.turn_off"),
+            "{stored}"
+        );
+
+        let (code, enabled) = post_json(
+            app.clone(),
+            &format!("/api/v1/automations/{id}/enable"),
+            serde_json::json!({}),
+        )
+        .await;
+        assert_eq!(
+            (code, enabled["enabled"].clone()),
+            (StatusCode::OK, Value::Bool(true))
+        );
+        assert_eq!(
+            hub.states
+                .get(&EntityId::parse("automation.eteindre_radiateur_salon").unwrap())
+                .unwrap()
+                .state,
+            "on"
+        );
+        assert_eq!(
+            get_json(app, "/api/v1/automations")
+                .await
+                .1
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn invalid_automations_are_kept_but_not_enabled() {
+        let (app, _) = app(AuthMode::Dev);
+        let (code, info) = post_json(
+            app.clone(),
+            "/api/v1/automations",
+            serde_json::json!({ "yaml": "id: x\nalias: Cassée\ntriggers: []\n" }),
+        )
+        .await;
+        assert_eq!(code, StatusCode::OK);
+        assert_eq!(info["valid"], false);
+        assert_eq!(info["errors"][0]["path"], "triggers");
+        assert_eq!(
+            post_json(
+                app.clone(),
+                "/api/v1/automations/x/enable",
+                serde_json::json!({})
+            )
+            .await
+            .0,
+            StatusCode::CONFLICT
+        );
+        assert_eq!(
+            post_json(
+                app.clone(),
+                "/api/v1/automations",
+                serde_json::json!({ "yaml": "a: [" })
+            )
+            .await
+            .0,
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            post_json(app, "/api/v1/automations/import-ha", serde_json::json!({}))
+                .await
+                .0,
+            StatusCode::NOT_FOUND
         );
     }
 

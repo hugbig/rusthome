@@ -31,11 +31,22 @@ pub enum BridgeError {
     Json(#[from] serde_json::Error),
 }
 
+/// Events received from HA subscriptions.
+// Short-lived values handled one by one: the size gap does not matter.
+#[allow(clippy::large_enum_variant)]
+#[derive(Debug, Clone)]
+pub enum BridgeEvent {
+    StateChanged(StateChanged),
+    /// `{"tag_id": …, "device_id": …}`
+    TagScanned(Value),
+}
+
 /// An authenticated connection to the HA WebSocket API.
 pub struct Connection {
     ws: Ws,
     next_id: u64,
     subscription: Option<u64>,
+    tag_subscription: Option<u64>,
 }
 
 /// `http://host:8123` → `ws://host:8123/api/websocket` (https → wss).
@@ -59,6 +70,7 @@ impl Connection {
             ws,
             next_id: 1,
             subscription: None,
+            tag_subscription: None,
         };
         conn.authenticate(token).await?;
         Ok(conn)
@@ -145,22 +157,47 @@ impl Connection {
         Ok(self)
     }
 
+    /// Also follows NFC badge scans (read-only subscription).
+    pub async fn subscribe_tag_scanned(&mut self) -> Result<&mut Self, BridgeError> {
+        let id = self.send(Command::SubscribeTagScanned).await?;
+        self.tag_subscription = Some(id);
+        Ok(self)
+    }
+
     /// Next `state_changed` from the subscription; `None` when HA closes.
+    /// Other events are skipped (use [`Self::next_event`] to get them).
     pub async fn next_state_changed(&mut self) -> Result<Option<StateChanged>, BridgeError> {
-        let Some(sub) = self.subscription else {
+        loop {
+            match self.next_event().await? {
+                None => return Ok(None),
+                Some(BridgeEvent::StateChanged(c)) => return Ok(Some(c)),
+                Some(BridgeEvent::TagScanned(_)) => {}
+            }
+        }
+    }
+
+    /// Next event of any subscription; `None` when HA closes.
+    pub async fn next_event(&mut self) -> Result<Option<BridgeEvent>, BridgeError> {
+        if self.subscription.is_none() && self.tag_subscription.is_none() {
             return Err(BridgeError::Protocol("not subscribed".into()));
-        };
+        }
         loop {
             let msg = match self.recv().await {
                 Ok(m) => m,
                 Err(BridgeError::Protocol(p)) if p == "connection closed" => return Ok(None),
                 Err(e) => return Err(e),
             };
-            if msg["type"] != "event" || msg["id"] != sub {
+            if msg["type"] != "event" {
+                continue;
+            }
+            if self.tag_subscription.is_some_and(|t| msg["id"] == t) {
+                return Ok(Some(BridgeEvent::TagScanned(msg["event"]["data"].clone())));
+            }
+            if self.subscription.is_none_or(|s| msg["id"] != s) {
                 continue;
             }
             match serde_json::from_value::<StateChanged>(msg["event"]["data"].clone()) {
-                Ok(change) => return Ok(Some(change)),
+                Ok(change) => return Ok(Some(BridgeEvent::StateChanged(change))),
                 Err(e) => {
                     tracing::debug!(error = %e, "HA bridge: unparsable state_changed ignored");
                 }

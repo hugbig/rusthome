@@ -7,6 +7,7 @@
 
 mod client;
 mod command;
+pub mod rest;
 
 use std::time::Duration;
 
@@ -15,7 +16,7 @@ use rusthome_import::{ImportResult, import_registries};
 use rusthome_model::{State, StateChanged};
 use url::Url;
 
-pub use client::{BridgeError, Connection};
+pub use client::{BridgeError, BridgeEvent, Connection};
 pub use command::Command;
 
 #[derive(Debug, Clone)]
@@ -64,9 +65,17 @@ async fn run_once(
     tracing::info!(?report, "HA bridge: snapshot applied");
     ready.send_replace(true);
 
-    let events = conn.subscribe_state_changed().await?;
-    while let Some(change) = events.next_state_changed().await? {
-        apply_change(hub, &imported, change);
+    conn.subscribe_state_changed().await?;
+    conn.subscribe_tag_scanned().await?;
+    while let Some(ev) = conn.next_event().await? {
+        match ev {
+            BridgeEvent::StateChanged(change) => apply_change(hub, &imported, change),
+            // Badge scans are republished on RustHome's bus for `tag` triggers.
+            BridgeEvent::TagScanned(data) => hub.bus.publish(rusthome_core::Event::Custom {
+                event_type: "tag_scanned".into(),
+                data,
+            }),
+        }
     }
     Ok(())
 }

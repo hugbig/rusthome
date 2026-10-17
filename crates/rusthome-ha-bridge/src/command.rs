@@ -6,6 +6,8 @@ use serde_json::{Value, json};
 pub enum Command {
     GetStates,
     SubscribeStateChanged,
+    /// NFC badge scans, to feed `tag` triggers of RustHome automations.
+    SubscribeTagScanned,
     FloorList,
     AreaList,
     LabelList,
@@ -14,9 +16,10 @@ pub enum Command {
 }
 
 impl Command {
-    pub const ALL: [Command; 7] = [
+    pub const ALL: [Command; 8] = [
         Command::GetStates,
         Command::SubscribeStateChanged,
+        Command::SubscribeTagScanned,
         Command::FloorList,
         Command::AreaList,
         Command::LabelList,
@@ -28,7 +31,7 @@ impl Command {
     pub fn message_type(self) -> &'static str {
         match self {
             Command::GetStates => "get_states",
-            Command::SubscribeStateChanged => "subscribe_events",
+            Command::SubscribeStateChanged | Command::SubscribeTagScanned => "subscribe_events",
             Command::FloorList => "config/floor_registry/list",
             Command::AreaList => "config/area_registry/list",
             Command::LabelList => "config/label_registry/list",
@@ -40,8 +43,10 @@ impl Command {
     #[must_use]
     pub fn to_message(self, id: u64) -> Value {
         let mut msg = json!({ "id": id, "type": self.message_type() });
-        if self == Command::SubscribeStateChanged {
-            msg["event_type"] = json!("state_changed");
+        match self {
+            Command::SubscribeStateChanged => msg["event_type"] = json!("state_changed"),
+            Command::SubscribeTagScanned => msg["event_type"] = json!("tag_scanned"),
+            _ => {}
         }
         msg
     }

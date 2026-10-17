@@ -1,0 +1,96 @@
+{
+ "entities": [
+  {
+   "uid": "2086268ff3ea76a21cd02e93200f1eec",
+   "entity_id": "switch.0x54ef4410003a66f3",
+   "integration": "z2m",
+   "unique_id": "0x54ef4410003a66f3_switch_zigbee2mqtt"
+  },
+  {
+   "uid": "2fba20bb09c7afaae8dbc61479603605",
+   "entity_id": "light.elements_9d16",
+   "integration": "ha:nanoleaf",
+   "unique_id": "S23220E0667"
+  },
+  {
+   "uid": "87b76ecbad95a658ff1c98bdbc937628",
+   "entity_id": "switch.0x54ef4410003a6d55",
+   "integration": "z2m",
+   "unique_id": "0x54ef4410003a6d55_switch_zigbee2mqtt"
+  },
+  {
+   "uid": "a23153e12071947bc8675b1103b738ad",
+   "entity_id": "light.awtrix_b5d8b4_matrix",
+   "integration": "ha:mqtt",
+   "unique_id": "b5d8b4_mat"
+  },
+  {
+   "uid": "a550063dd87c509b0c9c61cd9cec79cb",
+   "entity_id": "remote.sony_kd_55xe9005",
+   "integration": "ha:braviatv",
+   "unique_id": "4dc5e8f5827f71811433f1564d83600b34240d0d2e193cfb19bd5c3c60474cd1"
+  },
+  {
+   "uid": "a95ed30dd926062d478ea38e27775edb",
+   "entity_id": "switch.interrupteur_nspanel",
+   "integration": "z2m",
+   "unique_id": "0xa4c1389fc6ce5680_switch_zigbee2mqtt"
+  },
+  {
+   "uid": "aafca18d492ede9db05a877cc2dd0f68",
+   "entity_id": "event.interrupteur_button_4",
+   "integration": "hue",
+   "unique_id": "fd3424b7-629c-4190-99b9-0bd05cb17268"
+  },
+  {
+   "uid": "adab7a60acf3306f751a3118a9b62bee",
+   "entity_id": "light.hue_lightstrip_plus",
+   "integration": "hue",
+   "unique_id": "797ce61f-4f2e-4c7d-8e86-f3ffbba89ff7"
+  },
+  {
+   "uid": "e523b1b3fed8044ba81e2608d113867b",
+   "entity_id": "light.hue_go_bureau",
+   "integration": "hue",
+   "unique_id": "376d4fa0-4d3f-4cd0-8b5b-ab25fdc443bc"
+  },
+  {
+   "uid": "fd85b37130827dcc9055e4dd871ecc37",
+   "entity_id": "binary_sensor.presence_bureau_occupancy",
+   "integration": "z2m",
+   "unique_id": "0xa49e69fffe9e1983_occupancy_zigbee2mqtt"
+  }
+ ],
+ "devices": [
+  {
+   "id": "z2m-0x00158d0007081ee7",
+   "name": "Cube",
+   "integration": "z2m"
+  },
+  {
+   "id": "z2m-0x54ef4410002a0654",
+   "name": "Interrupteur Living",
+   "integration": "z2m"
+  },
+  {
+   "id": "z2m-0x54ef441000b7c65f",
+   "name": "Interrupteur sans fil ",
+   "integration": "z2m"
+  },
+  {
+   "id": "z2m-0x7cc6b6fffe393077",
+   "name": "bouton_tireuse",
+   "integration": "z2m"
+  },
+  {
+   "id": "135faf540e6b9f373faeb5671efd1597",
+   "name": "Interrupteur sans fil ",
+   "integration": "ha:mqtt"
+  },
+  {
+   "id": "5411279f7540ed2fafbd91a554b0efb9",
+   "name": "bouton_tireuse",
+   "integration": "ha:mqtt"
+  }
+ ]
+}

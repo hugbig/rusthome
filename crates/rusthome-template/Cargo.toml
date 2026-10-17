@@ -10,7 +10,10 @@ workspace = true
 [dependencies]
 chrono = "0.4.45"
 chrono-tz = "0.10.4"
+fastrand = "2.5.0"
 minijinja = { version = "3.0.1", features = ["builtins", "serde"] }
+minijinja-contrib = { version = "3.0.1", features = ["pycompat"] }
+regex = "1.13.1"
 rusthome-core = { version = "0.1.0", path = "../rusthome-core" }
 rusthome-model = { version = "0.1.0", path = "../rusthome-model" }
 serde_json = "1.0.154"

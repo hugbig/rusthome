@@ -21,7 +21,15 @@ pub enum RegistryKind {
 #[serde(tag = "event_type", content = "data", rename_all = "snake_case")]
 pub enum Event {
     StateChanged(StateChanged),
-    RegistryUpdated { kind: RegistryKind, id: String },
+    RegistryUpdated {
+        kind: RegistryKind,
+        id: String,
+    },
+    /// Free-form event (`tag_scanned`, `automation_triggered`…), as HA's bus.
+    Custom {
+        event_type: String,
+        data: serde_json::Value,
+    },
 }
 
 /// Broadcast bus. Slow subscribers lag and miss events rather than blocking
