@@ -138,5 +138,5 @@ Un changement est terminé quand :
 1. `just check` passe (fmt, clippy `-D warnings`, tests Rust et frontend, svelte-check) ;
 2. le comportement nouveau est couvert par des tests ;
 3. il est lançable en local (`just dev`) et a été essayé, ou le compte rendu dit clairement ce qui n'a pas pu l'être ;
-4. la doc est à jour (spec, `docs/integrations.md`, tableau `just` si besoin) ;
+4. la doc est à jour : **`README.md`** (tableau d'avancement, commandes, variables), la spec, `docs/integrations.md`, le tableau `just` si besoin ;
 5. aucune règle du §2 n'a été enfreinte.
