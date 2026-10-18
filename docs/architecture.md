@@ -6,18 +6,18 @@
 ## 1. Principes directeurs
 
 1. **Le périmètre vient de l'inventaire.**
-   - Le moteur couvre les 27 automatismes vivants et les dormants que Hugo veut garder.
+   - Le moteur couvre les 27 automatisations vivantes et les dormantes que Hugo veut garder.
    - Le catalogue de cartes couvre les 4 dashboards vivants.
    - **Toutes les intégrations sont reprises** (décision du 2026-10-17) : le cœur en v1 (M1 à M7), le reste en M8 et M9. Voir [integrations.md](integrations.md).
-2. **Un seul modèle de données pour l'UI et le YAML.** Un automatisme ou un dashboard est un document typé (Rust `serde` + JSON Schema). L'éditeur visuel et l'éditeur YAML sont deux vues du même document, sans état propre à l'une ou à l'autre.
+2. **Un seul modèle de données pour l'UI et le YAML.** Une automatisation ou un dashboard est un document typé (Rust `serde` + JSON Schema). L'éditeur visuel et l'éditeur YAML sont deux vues du même document, sans état propre à l'une ou à l'autre.
 3. **Compatibilité d'import, pas d'émulation.**
-   - On importe les formats HA (automatismes, Lovelace, Alarmo, registres) dans le modèle du clone.
+   - On importe les formats HA (automatisations, Lovelace, Alarmo, registres) dans le modèle du clone.
    - On ne reproduit ni l'API Python des intégrations ni HACS.
    - Les références par `device_id` ou UUID sont résolues à l'import et interdites ensuite.
 4. **Dépendances externes conservées** : Mosquitto, Zigbee2MQTT, Frigate, Piper, ESPHome Builder, SWAG + Authelia. Le clone **se branche** sur ces services, il ne les remplace pas.
 5. **Migration progressive et réversible.**
    - Le clone tourne à côté de HA.
-   - Chaque automatisme, et chaque appareil qui parle directement au hub, n'est piloté **que par un seul système** à un instant donné.
+   - Chaque automatisation, et chaque appareil qui parle directement au hub, n'est piloté **que par un seul système** à un instant donné.
    - L'alarme bascule en dernier.
 6. **Sobriété** : un seul binaire, SQLite, pas de broker interne supplémentaire. Le système doit tourner confortablement sur un Raspberry Pi 4 ou dans un conteneur sur l'hôte Docker.
 
@@ -57,14 +57,14 @@ Le workspace Cargo vit à la racine du dépôt, à côté de `inventaire/` et `d
 
 | Crate | Rôle | Dépendances clés |
 |---|---|---|
-| `rusthome-model` | Types du domaine : `EntityId`, `State`, `Device`, `Area`… ; documents automatisme, dashboard et alarme ; dérivation JSON Schema (`schemars`) | serde, schemars, chrono |
+| `rusthome-model` | Types du domaine : `EntityId`, `State`, `Device`, `Area`… ; documents automatisation, dashboard et alarme ; dérivation JSON Schema (`schemars`) | serde, schemars, chrono |
 | `rusthome-core` | Registres, state machine, bus d'événements, service registry, contexte (`Context { id, user_id, parent_id }`) | tokio |
 | `rusthome-template` | Environnement minijinja et extensions HA (§6.4) | minijinja |
 | `rusthome-automation` | Moteur : triggers, conditions, actions, modes, traces | core, template |
 | `rusthome-alarm` | Centrale d'alarme native (§7) | core |
 | `rusthome-recorder` | Historique, statistiques, persistance de la configuration | sqlx (SQLite) |
 | `rusthome-integrations/*` | Un crate par intégration (`mqtt`, `z2m`, `esphome`, `homekit`, …) | rumqttc, esphome-native-api, hap-controller, reqwest |
-| `rusthome-import` | Importeurs HA : registres, automatismes, Lovelace, `alarmo.storage`, helpers | serde_yaml |
+| `rusthome-import` | Importeurs HA : registres, automatisations, Lovelace, `alarmo.storage`, helpers | serde_yaml |
 | `rusthome-api` | axum : REST, WebSocket, OIDC, permissions | axum, openidconnect |
 | `rusthome` (bin) | Assemblage, configuration, démarrage | – |
 | `frontend/` | SvelteKit (adapter-static) servi par le binaire | Svelte 5, TypeScript |
@@ -77,7 +77,7 @@ Les types TypeScript du frontend sont **générés** depuis les JSON Schema de `
 
 - **Identifiants** : on conserve le format HA `domaine.objet` (`light.salon`) pour la familiarité et l'import.
   - Chaque entité possède aussi un `uid` interne stable, qui sert aux renommages.
-  - Les documents (automatismes, dashboards) stockent l'`entity_id`. Un renommage les **réécrit** de façon transactionnelle, avec un aperçu des impacts : c'est ce que HA ne fait pas.
+  - Les documents (automatisations, dashboards) stockent l'`entity_id`. Un renommage les **réécrit** de façon transactionnelle, avec un aperçu des impacts : c'est ce que HA ne fait pas.
 - **État** : `State { entity_id, state: String, attributes: Map, last_changed, last_updated, last_reported, context }`. On garde la sémantique HA (`unavailable`, `unknown`), car les templates importés en dépendent.
 - **Distinction bruit / panne** (cf. 05-mort) :
   - les entités « sans état » (bouton, scène, événement) exposent `last_triggered` au lieu de `unknown` ;
@@ -111,7 +111,7 @@ Ce sont les tables SQLite chargées en mémoire au démarrage. Chaque écriture 
 ### 4.4 Persistance
 
 **SQLite** (sqlx, mode WAL), avec un fichier de configuration et un fichier d'historique séparés :
-- **config.db** : registres, documents (automatismes, dashboards, alarme, helpers), utilisateurs et rôles, paramètres des intégrations. Les secrets sont **chiffrés** avec une clé fournie par l'environnement.
+- **config.db** : registres, documents (automatisations, dashboards, alarme, helpers), utilisateurs et rôles, paramètres des intégrations. Les secrets sont **chiffrés** avec une clé fournie par l'environnement.
 - **history.db** :
   - `states` : rétention de 10 jours, avec exclusions par domaine et par intégration. Portainer et les réglages Thingino sont exclus par défaut.
   - `statistics` : agrégats horaires et journaliers (min, max, moyenne, somme) pour les entités `state_class`. Rétention illimitée, nécessaire pour les compteurs Linky et les graphes.
@@ -151,7 +151,7 @@ trait Integration: Send + Sync {
 | `alexa` | **sidecar** HTTP local (Python, lib `alexapy`) | `notify.alexa_*` (annonce, TTS) | API non officielle : isolée dans un conteneur jetable. Le TTS passe par le skill Amazon « Simon Says », donc le « skill Simon » de CLAUDE.md n'a rien à recréer |
 | `notify` | ntfy (HTTP) | `notify.hugo`, `notify.sokhna`, `notify.nspanel` : priorité, tags, pièce jointe (snapshot) | Remplace mobile_app et Pushbullet |
 | `presence` | ntfy ou OwnTracks (HTTP) | `device_tracker` GPS pour `person` | Remplace la position de l'app compagnon : **à choisir** (§12) |
-| `awtrix` | MQTT | Entités et applications custom | Les 5 automatismes « horloge » sont fusionnés en un module paramétré |
+| `awtrix` | MQTT | Entités et applications custom | Les 5 automatisations « horloge » sont fusionnées en un module paramétré |
 | `portainer` | API HTTPS | Statut par **nom** de conteneur, redémarrage | Pas d'historique |
 | `ha_bridge` | WebSocket HA (jeton longue durée) | Miroir en lecture de toutes les entités HA, et appel de services HA | **Temporaire** : migration (§9) |
 | M8 / M9 | – | **Toutes les autres intégrations** (décision « tout reprendre ») | Voir [integrations.md](integrations.md) : 68 intégrations, approche, effort, jalon |
@@ -184,11 +184,11 @@ L'inventaire (08 §3) montre que les ESP32 **attendent le comportement complet d
 - **Constat du 2026-10-17 (exploration M2, reportée à P4 par Hugo)** :
   - **Option A non faisable telle quelle.** Ajouter un contrôleur exige un contrôleur *administrateur*. Ici, c'est HA (appairé seul via le code), et ni HA ni l'app Maison ne proposent d'« ajouter un contrôleur tiers ».
   - **Crate `hap-controller` 3.3.0** : il couvre l'appairage par IP sans découverte (`Discovered::Ip` construit à la main), la lecture, l'écriture et l'abonnement, ainsi que `add_pairing`, `remove_pairing` et `list_pairings`.
-  - **Thermostat** : « Netatmo Relay » à `192.168.1.167:5001`, identifiant d'appairage `B3:52:17:73:04:15`. Il n'est utilisé dans aucun automatisme HA, seulement dans des dashboards.
+  - **Thermostat** : « Netatmo Relay » à `192.168.1.167:5001`, identifiant d'appairage `B3:52:17:73:04:15`. Il n'est utilisé dans aucune automatisation HA, seulement dans des dashboards.
   - **Pas de découverte mDNS depuis WSL2** en mode NAT : il faut passer l'adresse en dur en dev, ou tester depuis l'hôte Docker .25.
   - **Plan P4 retenu** : retirer l'appairage dans HA, puis appairer RustHome avec le code à 8 chiffres. Impact : la carte thermostat des dashboards HA devient vide, mais le chauffage continue via Netatmo. Retour arrière : retirer RustHome, puis réappairer HA avec le même code.
 
-## 6. Moteur d'automatismes
+## 6. Moteur d'automatisations
 
 ### 6.1 Modèle
 
@@ -206,10 +206,10 @@ Il correspond à 02 §10.1, plus les dormants conservés.
 
 ### 6.3 Exécution
 
-- Chaque déclencheur est un abonné au bus, compilé à l'activation : un index par entity_id évite d'évaluer tous les automatismes à chaque `state_changed`.
+- Chaque déclencheur est un abonné au bus, compilé à l'activation : un index par entity_id évite d'évaluer tous les automatisations à chaque `state_changed`.
 - Un run est une tâche tokio, qui porte un `CancellationToken` pour `restart` et `stop`.
 - Le désarmement ne tue pas les runs en cours (exigence de l'alarme, 02 §9.3 point 4).
-- **Traces** : chaque run enregistre le déclencheur, les variables, le chemin de chaque étape (résultat, durée, erreur) et les changements d'état provoqués. On en garde 10 par automatisme, 50 pour la catégorie « Alarme ». L'UI les affiche sous forme de graphe.
+- **Traces** : chaque run enregistre le déclencheur, les variables, le chemin de chaque étape (résultat, durée, erreur) et les changements d'état provoqués. On en garde 10 par automatisation, 50 pour la catégorie « Alarme ». L'UI les affiche sous forme de graphe.
 - `last_triggered` est exposé sur l'entité `automation.*`.
 - Les **erreurs** d'actions avec `continue_on_error` sont tracées et journalisées, sans interrompre la séquence.
 
@@ -242,11 +242,11 @@ Elle remplace Alarmo. Les exigences viennent de 07 et de 02 §9.
   - modes (sortie, entrée, déclenchement) ;
   - capteurs (type, modes, délais, `allow_open`, `always_on`, `trigger_unavailable`, `auto_bypass`).
 - **Entité** `alarm_control_panel.alarme`. Pendant la transition, l'**alias `alarm_control_panel.alarmo`** est conservé, car les firmwares ESP s'y abonnent.
-- **Services** : `alarm.arm` (mode, `skip_delay`), `alarm.disarm`, `alarm.trigger`. Les alias `alarmo.arm` / `alarmo.disarm` servent aux ESP et aux automatismes importés.
+- **Services** : `alarm.arm` (mode, `skip_delay`), `alarm.disarm`, `alarm.trigger`. Les alias `alarmo.arm` / `alarmo.disarm` servent aux ESP et aux automatisations importées.
 - **Événements** : `alarm_state_changed`, `alarm_arm_failed` (capteurs bloquants), `alarm_sensor_triggered`.
 - **Identification** : par badge (registre §4.2) ou par personne (présence). Le code PIN reste optionnel.
 - **Vue Santé** : capteurs d'alarme `unavailable`, batterie des sirènes, lecteurs hors ligne. L'armement est bloqué, avec un avertissement, si un capteur actif est indisponible (paramétrable).
-- Les **réactions** (sirènes, clips, notifications) restent des **automatismes** de la catégorie « Alarme », pas de la logique codée en dur dans la centrale. C'est le même découpage qu'aujourd'hui, lisible et éditable.
+- Les **réactions** (sirènes, clips, notifications) restent des **automatisations** de la catégorie « Alarme », pas de la logique codée en dur dans la centrale. C'est le même découpage qu'aujourd'hui, lisible et éditable.
 
 ## 8. API, authentification, rôles
 
@@ -270,7 +270,7 @@ Elle remplace Alarmo. Les exigences viennent de 07 et de 02 §9.
 | Rôle | Droits |
 |---|---|
 | `admin` | Tout : configuration, intégrations, utilisateurs, Zigbee, import |
-| `resident` (hugo, sokhna) | Utiliser les dashboards, piloter les entités, armer et désarmer, voir l'historique ; éditer les automatismes et dashboards **non verrouillés** |
+| `resident` (hugo, sokhna) | Utiliser les dashboards, piloter les entités, armer et désarmer, voir l'historique ; éditer les automatisations et dashboards **non verrouillés** |
 | `display` (nspanel) | Lecture et commandes sur une liste blanche d'entités ; pas de désarmement sans badge (paramétrable) |
 
 - Les permissions sont évaluées sur `(rôle, action, ressource)`, avec des ressources filtrables par pièce, label ou domaine.
@@ -282,28 +282,30 @@ Elle remplace Alarmo. Les exigences viennent de 07 et de 02 §9.
 |---|---|---|---|
 | **P0 : miroir** | `ha_bridge` en lecture seule, import des registres (sans le mort, cf. 05 §7), dashboards Sécurité et Aperçu dans le clone | Inchangé | Le clone affiche les mêmes états que HA pendant une semaine |
 | **P1 : sources natives + déménagement MQTT/Z2M** | Mosquitto et Z2M passent en Docker sur .25 (§11.1), puis `mqtt` + `z2m`, `frigate`, `hue`, `portainer`, `cast` en lecture directe | L'intégration MQTT de HA pointe vers le nouveau Mosquitto ; les add-ons Mosquitto et Z2M sont arrêtés | Parité des états ; les 17 appareils sont réappairés avec la nouvelle clé |
-| **P2 : automatismes non critiques** | Import, puis reprise un par un : Awtrix, cube, interrupteurs, tireuse, Spotify, radiateur, congélateur. Désactivation dans HA **au même moment** | Automatisme désactivé | Traces OK sur 1 semaine |
+| **P2 : automatisations non critiques** | Import, puis reprise une par une : Awtrix, cube, interrupteurs, tireuse, Spotify, radiateur, congélateur. Désactivation dans HA **au même moment** | Automatisation désactivée | Traces OK sur 1 semaine |
 | **P3 : notifications et présence** | ntfy, solution GPS, Alexa (sidecar) | mobile_app conservé en secours | Notifications reçues sur les deux téléphones |
 | **P4 : HomeKit** | Appairage Netatmo (option A ou B, §5.4) | – | Contrôle du chauffage |
-| **P5 : alarme** | Centrale native importée et **double fonctionnement en observation** : le clone calcule ses états sans agir. Puis bascule des ESP32 (lecteurs) et de la centrale, et reprise des automatismes « Alarme » | Alarmo, puis les lecteurs, retirés | 2 semaines sans écart, avec un test d'intrusion réel |
+| **P5 : alarme** | Centrale native importée et **double fonctionnement en observation** : le clone calcule ses états sans agir. Puis bascule des ESP32 (lecteurs) et de la centrale, et reprise des automatisations « Alarme » | Alarmo, puis les lecteurs, retirés | 2 semaines sans écart, avec un test d'intrusion réel |
 | **P6 : arrêt de HA** | **Après M9** : plus aucune entité ne passe par le bridge. Suppression de `ha_bridge`. Le Pi est libéré : il peut être réutilisé, par exemple en hôte de secours | HA éteint | – |
 
-**Règle invariante** : à tout moment, une table « propriétaire » (automatisme ou appareil → `ha` | `rusthome`) est tenue dans le clone et affichée dans l'UI. L'import refuse d'activer un automatisme dont l'équivalent est actif dans HA, ce que l'on vérifie via le bridge.
+**Règle invariante** : à tout moment, une table « propriétaire » (automatisation ou appareil → `ha` | `rusthome`) est tenue dans le clone et affichée dans l'UI. L'import refuse d'activer une automatisation dont l'équivalent est actif dans HA, ce que l'on vérifie via le bridge.
 
 ## 10. Frontend (SvelteKit, Svelte 5)
 
 - **Structure** :
   - `/` : dashboards ;
-  - `/config/*` : pièces, étages, labels, appareils, entités, badges, automatismes, alarme, Zigbee, intégrations, utilisateurs ;
+  - `/config/*` : pièces, étages, labels, appareils, entités, badges, automatisations, alarme, Zigbee, intégrations, utilisateurs ;
   - `/history`, `/logbook`, `/health`.
 - **État temps réel** : un store rune (`$state`) alimenté par le WebSocket. Les cartes s'abonnent par entity_id, ce qui donne un rendu fin.
-- **Dashboards** : un document `Dashboard { views[ { type: sections|masonry|panel, sections[ cards[] ] } ] }`. Il est édité en visuel (drag & drop, formulaires générés depuis le schéma de chaque carte) ou en YAML, sur le même principe que les automatismes.
+- **Dashboards** : un document `Dashboard { views[ { type: sections|masonry|panel, sections[ cards[] ] } ] }`. Il est édité en visuel (drag & drop, formulaires générés depuis le schéma de chaque carte) ou en YAML, sur le même principe que les automatisations.
 - **Catalogue de cartes v1** (03 §5) :
   - P0 : `heading`, `tile`, `entities` (slider), `alarm-panel`, `gauge`, `grid` / stacks ;
   - P1 : `camera`, `logbook`, `thermostat`, `media-control`, `graph`, `weather`, `popup` (`#hash`).
   - L'**importeur Lovelace** fait correspondre les cartes Mushroom, Bubble et tempometer aux cartes natives ; une carte inconnue devient une carte « non supportée » visible.
 - **Validateur de références** : une carte pointant vers une entité absente est signalée dans l'éditeur.
 - **Profils d'affichage** : le mode kiosque par dashboard et par compte (NsPanel) masque l'en-tête et la navigation, et active le swipe entre vues.
+- **État M4** (2026-10-17) : catalogue P0, P1 et P2 livré (`/tableaux/<url_path>/<vue>`), aucune carte non supportée sur les tableaux réels ; import Lovelace en lecture seule ; kiosque par tableau (ou `?kiosk`). Éditeur façon HA : vues, sections en grille de 12 colonnes (`grid_options`), glisser-déposer, sélecteur de cartes, formulaires par type générés depuis un catalogue, sous-cartes en onglets, YAML par carte et complet, enregistrement à chaque modification. Images : caméras via `/api/v1/cameras/<id>/snapshot` (Frigate, sinon proxy HA en GET), affiches Emby via `/api/v1/media/<id>/image` (seulement les URL listées par le capteur). Agendas et listes de tâches lus dans HA (REST GET, WS `todo/item/list`) jusqu'à leur reprise. Interface : menu latéral façon HA, pages Carte, Journal (`/api/v1/logbook`), Historique, Média, Alarme, ESPHome, Zigbee2MQTT, Paramètres (intégrations, système via `/api/v1/system`, personnes) et profil. **Écart avec le découpage** : l'éditeur visuel des automatisations, prévu au M5, est livré avec le M4 à la demande de Hugo. Reportés : dashboard imposé au compte `display`, prévisions météo (service HA `weather.get_forecasts`).
+- **État M5** (2026-10-18) : gestion Zigbee livrée (page `/zigbee`, API `/api/v1/zigbee/*`) : appairage avec compte à rebours et événements du réseau en direct, renommage avec aperçu puis propagation des entity_id (registre, état, historique, automatisations, tableaux), OTA, retrait, groupes et liaisons ; requêtes du pont en liste fermée, refusées avant envoi tant que MQTT est en lecture seule. Navigateur média (caméras, Frigate natif, sources HA en lecture ; vidéos Frigate lues en HLS via `/vod/` comme l’UI de Frigate, car ses `clip.mp4` sont des MP4 fragmentés sans durée totale, que les navigateurs coupent après le premier fragment), tableau Énergie complet, tableau imposé aux comptes `display` (`RUSTHOME_DISPLAY_DASHBOARD`).
 - **Gestion Zigbee** :
   - liste des appareils (LQI, batterie, dernier contact, firmware) ;
   - appairage (`permit_join` avec compte à rebours et nouveaux appareils en direct), renommage (qui propage le nouveau nom dans les entity_id après confirmation), OTA, carte du réseau (v1.1) ;
@@ -329,10 +331,10 @@ Elle remplace Alarmo. Les exigences viennent de 07 et de 02 §9.
 - **Image** : multi-arch (amd64 + arm64), binaire statique, frontend embarqué (`rust-embed`).
 - **Configuration de démarrage** : `rusthome.toml` (chemins, URL OIDC, MQTT) et secrets en variables d'environnement. Le reste se configure dans l'UI ou par import YAML.
 - **Sauvegarde** : snapshot SQLite à chaud (`VACUUM INTO`) quotidien, plus un export YAML versionnable (sans secrets).
-- **Observabilité** : `tracing` (JSON) et métriques Prometheus (latence du bus, runs d'automatismes, santé des intégrations).
+- **Observabilité** : `tracing` (JSON) et métriques Prometheus (latence du bus, runs d'automatisations, santé des intégrations).
 - **Tests** :
   - unitaires par crate ;
-  - **corpus d'import** : les 44 automatismes, les dashboards et `alarmo.storage` de l'inventaire servent de fixtures, et l'import doit réussir sans perte ;
+  - **corpus d'import** : les 44 automatisations, les dashboards et `alarmo.storage` de l'inventaire servent de fixtures, et l'import doit réussir sans perte ;
   - tests du moteur sur une horloge simulée (`tokio::time::pause`) ;
   - test de bout en bout de la chaîne alarme, avec des ESP simulés en serveur `esphome-native-api`.
 
@@ -353,9 +355,9 @@ Elle remplace Alarmo. Les exigences viennent de 07 et de 02 §9.
 |---|---|---|
 | **M1 : cœur** | model, core, recorder, template, API REST + WS, OIDC, `ha_bridge`, import des registres | Liste des entités en direct, depuis HA, dans une UI minimale |
 | **M2 : intégrations natives** | mqtt, z2m (lecture et commande), frigate, hue, portainer ; spike HomeKit et ESPHome | Pilotage d'une prise Zigbee depuis le clone |
-| **M3 : moteur** | Automatismes v1, traces, import des 44 automatismes, éditeur YAML | Les automatismes Awtrix tournent dans le clone |
+| **M3 : moteur** | Automatisations v1, traces, import des 44 automatisations, éditeur YAML | Les automatisations Awtrix tournent dans le clone |
 | **M4 : dashboards** | Cartes P0 + P1, import Lovelace, éditeur visuel de dashboards, profil NsPanel | Dashboard Sécurité dans le clone |
-| **M5 : éditeur visuel d'automatismes, gestion Zigbee** | Éditeur à blocs, appairage, renommage, OTA | – |
+| **M5 : éditeur visuel d'automatisations, gestion Zigbee** | Éditeur à blocs, appairage, renommage, OTA | – |
 | **M6 : ESPHome, HomeKit, notifications** | Client API native complet, HAP, ntfy, Alexa, présence | Lecteur v1 piloté par le clone (banc de test) |
 | **M7 : alarme** | Centrale native, observation, puis bascule | Phase P5 |
 | **M8 : intégrations étendues** | Médias, salon, infos, réseau, NAS (25 intégrations, cf. [integrations.md](integrations.md)) | Dashboards Aperçu et Monitoring entièrement natifs |

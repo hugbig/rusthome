@@ -94,7 +94,7 @@ Ce ne sont pas des intégrations dans le clone, mais des **types de helpers nati
 | Intégration HA | Entités | Approche clone | Effort | Jalon |
 |---|---|---|---|---|
 | `synology_dsm` | 30 | Natif, API Web DSM (disques, volumes, Surveillance Station) | M | M8 |
-| `sabnzbd` | 12 | Natif, API REST SABnzbd (automatisme vivant sur l'espace disque) | S | M8 |
+| `sabnzbd` | 12 | Natif, API REST SABnzbd (automatisation vivante sur l'espace disque) | S | M8 |
 | `sfr_box` | 6 | Natif, API HTTP de la box | S | M8 |
 | `nmap_tracker` | 10 | Natif, scan ARP / ICMP du LAN (`device_tracker`) | M | M8 |
 | `systemmonitor` | 8 | Natif (crate `sysinfo`) : hôte du clone | S | M8 |

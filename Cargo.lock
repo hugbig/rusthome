@@ -2394,6 +2394,7 @@ dependencies = [
  "rusthome-api",
  "rusthome-automation",
  "rusthome-core",
+ "rusthome-dashboard",
  "rusthome-frigate",
  "rusthome-ha-bridge",
  "rusthome-hue",
@@ -2425,11 +2426,15 @@ dependencies = [
  "futures-util",
  "http-body-util",
  "openidconnect",
+ "reqwest 0.13.5",
  "rusthome-automation",
  "rusthome-core",
+ "rusthome-dashboard",
+ "rusthome-frigate",
  "rusthome-ha-bridge",
  "rusthome-model",
  "rusthome-recorder",
+ "rusthome-z2m",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -2473,6 +2478,14 @@ dependencies = [
  "thiserror 2.0.21",
  "tokio",
  "tracing",
+]
+
+[[package]]
+name = "rusthome-dashboard"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

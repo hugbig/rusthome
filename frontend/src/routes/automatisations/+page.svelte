@@ -56,17 +56,17 @@
 		);
 		busy = false;
 		if (r.ok) {
-			notice = `${r.data.imported} importés (désactivés), ${r.data.skipped_existing} déjà présents, ${r.data.invalid} à corriger.`;
+			notice = `${r.data.imported} importées (désactivées), ${r.data.skipped_existing} déjà présentes, ${r.data.invalid} à corriger.`;
 			await load();
 		} else notice = r.error;
 	}
 </script>
 
 <div class="head">
-	<h1>Automatismes <small>{counts.enabled} actifs / {items.length}</small></h1>
+	<h1>Automatisations <small>{counts.enabled} actives / {items.length}</small></h1>
 	{#if isAdmin}
 		<div class="actions">
-			<a class="button" href={resolve('/automatismes/[id]', { id: 'nouveau' })}>Nouveau</a>
+			<a class="button" href={resolve('/automatisations/[id]', { id: 'nouveau' })}>Nouvelle</a>
 			<button onclick={importHa} disabled={busy}
 				>{busy ? 'Import…' : 'Importer depuis Home Assistant'}</button
 			>
@@ -75,12 +75,12 @@
 </div>
 
 {#if notice}<p class="notice card">{notice}</p>{/if}
-{#if error}<p class="notice card">Automatismes indisponibles : {error}</p>{/if}
+{#if error}<p class="notice card">Automatisations indisponibles : {error}</p>{/if}
 
 <div class="filters card">
 	<input type="search" placeholder="Rechercher…" bind:value={q} aria-label="Recherche" />
 	<div class="seg" role="group" aria-label="Filtre">
-		{#each [['all', 'Tous'], ['enabled', 'Actifs'], ['disabled', 'Désactivés'], ['problems', `À corriger (${counts.problems})`]] as [k, label] (k)}
+		{#each [['all', 'Toutes'], ['enabled', 'Actives'], ['disabled', 'Désactivées'], ['problems', `À corriger (${counts.problems})`]] as [k, label] (k)}
 			<button aria-pressed={filter === k} onclick={() => (filter = k as typeof filter)}
 				>{label}</button
 			>
@@ -91,13 +91,13 @@
 <section class="card">
 	<table>
 		<thead>
-			<tr><th>Automatisme</th><th>Dernier déclenchement</th><th class="right">Actif</th></tr>
+			<tr><th>Automatisation</th><th>Dernier déclenchement</th><th class="right">Active</th></tr>
 		</thead>
 		<tbody>
 			{#each shown as a (a.id)}
 				<tr>
 					<td>
-						<a href={resolve('/automatismes/[id]', { id: a.id })}>{a.alias}</a>
+						<a href={resolve('/automatisations/[id]', { id: a.id })}>{a.alias}</a>
 						{#if !a.valid}<span class="tag bad">erreur</span>
 						{:else if a.issues.length}<span class="tag warn">à vérifier</span>{/if}
 						{#if a.running}<span class="tag run">en cours</span>{/if}
@@ -116,7 +116,7 @@
 					</td>
 				</tr>
 			{:else}
-				<tr><td colspan="3" class="muted">Aucun automatisme.</td></tr>
+				<tr><td colspan="3" class="muted">Aucune automatisation.</td></tr>
 			{/each}
 		</tbody>
 	</table>

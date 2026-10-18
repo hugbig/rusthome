@@ -22,7 +22,7 @@ export type WsMessage =
 	| { type: 'state_changed'; data: StateChanged }
 	| { type: 'resync_required'; missed: number };
 
-// --- Automatismes (M3) : décrits à la main, comme les messages WebSocket ---
+// --- Automatisations (M3) : décrits à la main, comme les messages WebSocket ---
 
 export interface AutomationIssue {
 	path: string;

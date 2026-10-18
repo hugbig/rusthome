@@ -1,5 +1,6 @@
 //! `RustHome` entry point.
 
+mod cameras;
 mod config;
 
 use std::sync::Arc;
@@ -68,29 +69,15 @@ async fn main() -> anyhow::Result<()> {
 
     let engine = start_automations(&hub, &recorder, cfg.tz).await?;
 
-    start_integrations(&cfg, &hub, mirror_ready.as_ref(), &engine)?;
+    let natives = start_integrations(&cfg, &hub, mirror_ready.as_ref(), &engine)?;
+    let frigate = natives.frigate;
+    let dashboards = start_dashboards(&recorder).await?;
+    let ha = cfg.ha.as_ref().map(|(url, token)| BridgeConfig {
+        url: url.clone(),
+        token: token.clone(),
+    });
 
-    let auth = match &cfg.auth {
-        AuthConfig::Dev => AuthMode::Dev,
-        AuthConfig::Disabled => AuthMode::Disabled,
-        AuthConfig::Oidc(o) => {
-            let provider = OpenIdProvider::discover(
-                &o.issuer,
-                &o.client_id,
-                &o.client_secret,
-                &o.redirect_url(),
-            )
-            .await
-            .context("OIDC discovery (is RUSTHOME_OIDC_ISSUER reachable?)")?;
-            tracing::info!(issuer = %o.issuer, redirect = %o.redirect_url(), "OIDC login enabled");
-            let secure = o.public_url.scheme() == "https";
-            AuthMode::Oidc(Arc::new(OidcAuth::new(
-                Arc::new(provider),
-                o.roles.clone(),
-                secure,
-            )))
-        }
-    };
+    let auth = auth_mode(&cfg).await?;
 
     let app = router(
         ApiState {
@@ -104,11 +91,20 @@ async fn main() -> anyhow::Result<()> {
                     .mqtt
                     .as_ref()
                     .map_or_else(|| "zigbee2mqtt".to_owned(), |m| m.z2m_base_topic.clone()),
-                ha: cfg.ha.as_ref().map(|(url, token)| BridgeConfig {
-                    url: url.clone(),
-                    token: token.clone(),
-                }),
+                ha: ha.clone(),
             }),
+            dashboards: Some(rusthome_api::dashboards::DashboardsCtx {
+                store: dashboards,
+                ha: ha.clone(),
+                cameras: Some(Arc::new(cameras::Cameras {
+                    frigate: frigate.clone(),
+                    ha,
+                })),
+            }),
+            system: cfg.system_info(),
+            display_dashboard: cfg.display_dashboard.clone(),
+            zigbee: natives.z2m,
+            frigate,
         },
         cfg.static_dir.clone(),
     );
@@ -142,15 +138,49 @@ async fn start_automations(
     Ok(engine)
 }
 
+/// Authentication: dev user, disabled, or OIDC through Authelia.
+async fn auth_mode(cfg: &Config) -> anyhow::Result<AuthMode> {
+    Ok(match &cfg.auth {
+        AuthConfig::Dev => AuthMode::Dev,
+        AuthConfig::Disabled => AuthMode::Disabled,
+        AuthConfig::Oidc(o) => {
+            let provider = OpenIdProvider::discover(
+                &o.issuer,
+                &o.client_id,
+                &o.client_secret,
+                &o.redirect_url(),
+            )
+            .await
+            .context("OIDC discovery (is RUSTHOME_OIDC_ISSUER reachable?)")?;
+            tracing::info!(issuer = %o.issuer, redirect = %o.redirect_url(), "OIDC login enabled");
+            let secure = o.public_url.scheme() == "https";
+            AuthMode::Oidc(Arc::new(OidcAuth::new(
+                Arc::new(provider),
+                o.roles.clone(),
+                secure,
+            )))
+        }
+    })
+}
+
+/// Native integrations the API needs: Frigate (camera snapshots) and
+/// Zigbee2MQTT (network management).
+#[derive(Default)]
+struct Natives {
+    frigate: Option<Arc<rusthome_frigate::Frigate>>,
+    z2m: Option<Arc<rusthome_z2m::Z2m>>,
+}
+
 fn start_integrations(
     cfg: &Config,
     hub: &Hub,
     mirror_ready: Option<&tokio::sync::watch::Receiver<bool>>,
     engine: &Arc<rusthome_automation::Engine>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Natives> {
     let hub = hub.clone();
+    let mut natives = Natives::default();
     if let Some(m) = &cfg.mqtt {
-        start_mqtt(&hub, m, mirror_ready.cloned(), engine)?;
+        natives = start_mqtt(&hub, m, mirror_ready.cloned(), engine)?;
     }
     if let Some(h) = &cfg.hue {
         let hue = rusthome_hue::Hue::new(
@@ -186,16 +216,26 @@ fn start_integrations(
             rusthome_portainer::run(hub, pc).await;
         });
     }
-    Ok(())
+    Ok(natives)
 }
 
-/// MQTT client + Zigbee2MQTT integration (M2).
+/// Dashboards (M4): reloaded from the database.
+async fn start_dashboards(recorder: &Recorder) -> anyhow::Result<Arc<rusthome_dashboard::Store>> {
+    let store = Arc::new(rusthome_dashboard::Store::new());
+    for doc in recorder.load_dashboards().await? {
+        store.put(doc);
+    }
+    tracing::info!(loaded = store.list().len(), "dashboards loaded");
+    Ok(store)
+}
+
+/// MQTT client + Zigbee2MQTT integration (M2), and Frigate when configured.
 fn start_mqtt(
     hub: &Hub,
     m: &config::MqttSettings,
     mirror_ready: Option<tokio::sync::watch::Receiver<bool>>,
     engine: &Arc<rusthome_automation::Engine>,
-) -> anyhow::Result<()> {
+) -> anyhow::Result<Natives> {
     let (mqtt, eventloop) = rusthome_mqtt::Mqtt::new(&rusthome_mqtt::MqttConfig {
         url: m.url.clone(),
         username: m.username.clone(),
@@ -211,6 +251,10 @@ fn start_mqtt(
     feed_automations_from_mqtt(&mqtt, engine);
     let z2m = rusthome_z2m::Z2m::new(hub.clone(), &m.z2m_base_topic, Arc::new(mqtt.clone()));
     z2m.register_services();
+    let mut natives = Natives {
+        z2m: Some(Arc::clone(&z2m)),
+        ..Natives::default()
+    };
     if let Some(url) = &m.frigate_url {
         let frigate = rusthome_frigate::Frigate::new(
             hub.clone(),
@@ -221,6 +265,7 @@ fn start_mqtt(
         .context("Frigate client")?;
         frigate.register_services();
         tracing::info!(%url, "Frigate enabled");
+        natives.frigate = Some(Arc::clone(&frigate));
         let (mqtt, ready) = (mqtt.clone(), mirror_ready.clone());
         tokio::spawn(async move {
             wait_for_mirror(ready).await;
@@ -231,7 +276,7 @@ fn start_mqtt(
         wait_for_mirror(mirror_ready).await;
         z2m.run(mqtt).await;
     });
-    Ok(())
+    Ok(natives)
 }
 
 /// MQTT triggers: forwards every message to the engine and keeps the

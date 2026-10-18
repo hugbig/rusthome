@@ -1,6 +1,8 @@
 export interface Me {
 	name: string;
 	role: 'admin' | 'resident' | 'display';
+	/** Tableau imposé (compte de la tablette murale), sinon absent. */
+	home?: string | null;
 }
 
 /** Utilisateur courant (`/api/v1/me`). `anonymous` = connexion requise. */

@@ -10,3 +10,6 @@ frontend/.svelte-kit/
 
 # Inventaire de la maison (synthèses + exports bruts) : local uniquement, jamais versionné
 /inventaire/
+
+# Jeu d’icônes généré au build (scripts/mdi-json.mjs)
+frontend/static/icons/

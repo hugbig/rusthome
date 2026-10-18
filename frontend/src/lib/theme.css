@@ -1,0 +1,244 @@
+/* Thème RustHome : jetons de couleur, typographie, ombres, barres de
+   défilement et contrôles (interrupteurs, curseurs). Clair et sombre ont
+   chacun leurs propres valeurs, choisies (pas une simple inversion). */
+
+:root {
+	--primary: #1f5bc4;
+	--primary-text: #1f5bc4;
+	--on-primary: #ffffff;
+	--bg: #f3f5f8;
+	--sidebar: #fbfcfd;
+	--surface: #ffffff;
+	--surface-2: #f0f2f6;
+	--surface-3: #e4e8ef;
+	--text: #141a24;
+	--text-muted: #5f6878;
+	--border: rgb(15 23 42 / 0.08);
+	--border-strong: rgb(15 23 42 / 0.14);
+	--neutral-fill: #c9ced8;
+	--shadow: 0 1px 2px rgb(15 23 42 / 0.04), 0 6px 20px rgb(15 23 42 / 0.05);
+	--shadow-pop: 0 12px 32px rgb(15 23 42 / 0.16);
+	--radius: 16px;
+	--radius-sm: 10px;
+	--thumb: #ffffff;
+	--scroll: rgb(15 23 42 / 0.18);
+	/* Catégoriel validé (scripts/validate_palette.js) sur #ffffff */
+	--series-1: #1f5bc4;
+	--series-2: #eb6834;
+	--series-3: #1baf7a;
+	--series-4: #eda100;
+	--series-5: #e87ba4;
+	--series-6: #008300;
+	color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		--primary-text: #7eaaf0;
+		--bg: #0f1216;
+		--sidebar: #12151b;
+		--surface: #161a20;
+		--surface-2: #1d222b;
+		--surface-3: #283040;
+		--text: #e9ecf2;
+		--text-muted: #8e97a7;
+		--border: rgb(255 255 255 / 0.06);
+		--border-strong: rgb(255 255 255 / 0.12);
+		--neutral-fill: #3a4250;
+		--shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 8px 24px rgb(0 0 0 / 0.28);
+		--shadow-pop: 0 16px 40px rgb(0 0 0 / 0.5);
+		--thumb: #dfe4ec;
+		--scroll: rgb(255 255 255 / 0.14);
+		/* Mêmes teintes, pas sombres, validées sur #161a20 */
+		--series-1: #3987e5;
+		--series-2: #d95926;
+		--series-3: #199e70;
+		--series-4: #c98500;
+		--series-5: #d55181;
+		--series-6: #008300;
+	}
+}
+:root[data-theme='dark'] {
+	--primary-text: #7eaaf0;
+	--bg: #0f1216;
+	--sidebar: #12151b;
+	--surface: #161a20;
+	--surface-2: #1d222b;
+	--surface-3: #283040;
+	--text: #e9ecf2;
+	--text-muted: #8e97a7;
+	--border: rgb(255 255 255 / 0.06);
+	--border-strong: rgb(255 255 255 / 0.12);
+	--neutral-fill: #3a4250;
+	--shadow: 0 1px 0 rgb(255 255 255 / 0.03) inset, 0 8px 24px rgb(0 0 0 / 0.28);
+	--shadow-pop: 0 16px 40px rgb(0 0 0 / 0.5);
+	--thumb: #dfe4ec;
+	--scroll: rgb(255 255 255 / 0.14);
+	--series-1: #3987e5;
+	--series-2: #d95926;
+	--series-3: #199e70;
+	--series-4: #c98500;
+	--series-5: #d55181;
+	--series-6: #008300;
+	color-scheme: dark;
+}
+:root[data-theme='light'] {
+	color-scheme: light;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-family:
+		Inter,
+		'Segoe UI Variable Text',
+		'Segoe UI',
+		system-ui,
+		-apple-system,
+		sans-serif;
+	font-feature-settings: 'cv11', 'ss01';
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	letter-spacing: -0.005em;
+}
+a {
+	color: var(--primary-text);
+}
+h1 {
+	font-size: 1.45rem;
+	font-weight: 650;
+	letter-spacing: -0.015em;
+	margin: 4px 0 16px;
+}
+h2 {
+	font-size: 1rem;
+	font-weight: 600;
+	margin: 4px 0 8px;
+}
+.card {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	padding: 14px 18px;
+	margin-bottom: 16px;
+}
+::selection {
+	background: color-mix(in srgb, var(--primary) 35%, transparent);
+}
+:focus-visible {
+	outline: 2px solid var(--primary-text);
+	outline-offset: 2px;
+}
+
+/* Barres de défilement fines et discrètes */
+* {
+	scrollbar-width: thin;
+	scrollbar-color: var(--scroll) transparent;
+}
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--scroll);
+	border-radius: 999px;
+	border: 2px solid transparent;
+	background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+	background-color: color-mix(in srgb, var(--scroll) 100%, var(--text) 20%);
+}
+
+/* Interrupteur : piste fine, pastille ombrée qui déborde (style HA) */
+.dswitch {
+	position: relative;
+	flex: none;
+	width: 36px;
+	height: 14px;
+	margin: 3px 4px;
+	padding: 0;
+	border: none;
+	border-radius: 999px;
+	background: var(--surface-3);
+	cursor: pointer;
+	transition: background 0.2s;
+}
+.dswitch::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: -4px;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: var(--thumb);
+	box-shadow:
+		0 1px 3px rgb(0 0 0 / 0.3),
+		0 0 0 1px rgb(0 0 0 / 0.04);
+	transform: translateY(-50%);
+	transition:
+		left 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+		background 0.2s;
+}
+.dswitch[aria-checked='true'] {
+	background: color-mix(in srgb, var(--switch-color, var(--primary)) 50%, transparent);
+}
+.dswitch[aria-checked='true']::after {
+	left: 20px;
+	background: var(--switch-color, var(--primary));
+}
+.dswitch:disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+
+/* Curseur : piste fine, partie remplie colorée, pastille ronde */
+input[type='range'] {
+	-webkit-appearance: none;
+	appearance: none;
+	height: 22px;
+	background: transparent;
+	--fill: var(--primary);
+	cursor: pointer;
+}
+input[type='range']::-webkit-slider-runnable-track {
+	height: 6px;
+	border-radius: 999px;
+	background: linear-gradient(
+		to right,
+		var(--fill) 0 var(--val, 0%),
+		var(--surface-3) var(--val, 0%) 100%
+	);
+}
+input[type='range']::-moz-range-track {
+	height: 6px;
+	border-radius: 999px;
+	background: var(--surface-3);
+}
+input[type='range']::-moz-range-progress {
+	height: 6px;
+	border-radius: 999px;
+	background: var(--fill);
+}
+input[type='range']::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	width: 18px;
+	height: 18px;
+	margin-top: -6px;
+	border-radius: 50%;
+	background: var(--thumb);
+	box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+}
+input[type='range']::-moz-range-thumb {
+	width: 18px;
+	height: 18px;
+	border: none;
+	border-radius: 50%;
+	background: var(--thumb);
+	box-shadow: 0 1px 4px rgb(0 0 0 / 0.35);
+}

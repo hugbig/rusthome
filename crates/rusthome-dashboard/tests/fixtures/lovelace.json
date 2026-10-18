@@ -1,0 +1,1748 @@
+[
+ {
+  "meta": {
+   "url_path": "lovelace",
+   "title": "Aperçu",
+   "icon": "mdi:view-dashboard",
+   "require_admin": false,
+   "show_in_sidebar": false,
+   "mode": "yaml"
+  },
+  "config": {
+   "title": "Maison",
+   "background": "var(--background-image)",
+   "swipe_nav": {
+    "wrap": false,
+    "animate": "swipe",
+    "prevent_default": true,
+    "swipe_amount": 30
+   },
+   "views": [
+    {
+     "path": "default_view",
+     "title": "Accueil",
+     "icon": "mdi:home",
+     "badges": [
+      {
+       "entity": "binary_sensor.home_assistant_versions_update_available",
+       "name": "Update"
+      },
+      {
+       "entity": "binary_sensor.rpi_power_status"
+      },
+      {
+       "entity": "person.hugo",
+       "name": "Hugo",
+       "style": ":host {\n  {% if is_state('person.hugo','not_home') %}\n   --label-badge-red: purple;\n   {% endif %}\n  {% if is_state('person.hugo','home') %}\n   --label-badge-red: green;\n   {% endif %}\n}\n"
+      },
+      {
+       "entity": "sensor.sabnzbd_disk_free",
+       "name": "Sab disk free"
+      },
+      {
+       "entity": "sensor.interrupteur_sans_fil_battery",
+       "name": "Interrupteur Living"
+      },
+      {
+       "entity": "binary_sensor.backups_stale"
+      }
+     ],
+     "cards": [
+      {
+       "type": "horizontal-stack",
+       "cards": [
+        {
+         "type": "alarm-panel",
+         "entity": "alarm_control_panel.alarmo",
+         "name": "Alarme",
+         "states": [
+          "arm_away"
+         ]
+        },
+        {
+         "type": "tile",
+         "entity": "input_boolean.presence_a_la_maison",
+         "name": "Présence à la maison",
+         "icon": "mdi:home-group",
+         "tap_action": {
+          "action": "toggle"
+         }
+        }
+       ]
+      },
+      {
+       "type": "entities",
+       "entities": [
+        {
+         "type": "custom:slider-entity-row",
+         "entity": "light.hue_go_bureau",
+         "toggle": true
+        },
+        {
+         "type": "divider"
+        },
+        {
+         "type": "custom:slider-entity-row",
+         "entity": "light.hue_lightstrip_plus",
+         "toggle": true
+        },
+        {
+         "type": "divider"
+        },
+        {
+         "type": "custom:slider-entity-row",
+         "entity": "light.elements_9d16",
+         "toggle": true
+        },
+        {
+         "type": "custom:slider-entity-row",
+         "entity": "light.wled",
+         "toggle": true
+        },
+        "light.awtrix_b5d8b4_matrix",
+        "switch.interrupteur_nspanel"
+       ],
+       "title": "Bureau",
+       "state_color": true
+      },
+      {
+       "type": "entities",
+       "entities": [
+        "light.hue_play_gradient_lightstrip_1",
+        "light.hue_play_gauche",
+        "light.hue_play_droite",
+        "light.hue_play_centre",
+        "light.halogene",
+        "light.hue_go_salon",
+        "switch.radiateur_salon"
+       ],
+       "title": "Salon"
+      },
+      {
+       "type": "entities",
+       "entities": [
+        {
+         "entity": "switch.0x54ef4410003a6d55"
+        },
+        {
+         "entity": "switch.0x54ef4410003a66f3"
+        },
+        {
+         "entity": "switch.interrupteur_living_right"
+        }
+       ],
+       "title": "Living"
+      },
+      {
+       "type": "thermostat",
+       "entity": "climate.netatmo_smart_thermostat"
+      },
+      {
+       "type": "custom:mini-graph-card",
+       "entities": [
+        {
+         "entity": "sensor.radiateur_salon_power"
+        }
+       ],
+       "name": "Radiateur",
+       "font_size_header": 20,
+       "hour24": true,
+       "icon": "mdi:flash",
+       "aggregate_func": "max",
+       "group_by": "date",
+       "hours_to_show": 168,
+       "show": {
+        "graph": "bar"
+       }
+      },
+      {
+       "type": "custom:tempometer-gauge-card",
+       "entity": "sensor.temperature_exterieur_pressure",
+       "min": 950,
+       "max": 1050,
+       "title": "Barometre",
+       "decimals": 0,
+       "severity": {
+        "green": 1015,
+        "yellow": 1000,
+        "red": 950
+       }
+      },
+      {
+       "type": "custom:tempometer-gauge-card",
+       "entity": "sensor.temperature_exterieur_temperature",
+       "min": -15,
+       "max": 40,
+       "title": "Extérieur",
+       "card_style": "thermometer",
+       "decimals": 1,
+       "severity": {
+        "green": 20,
+        "yellow": 10,
+        "red": -15
+       }
+      },
+      {
+       "type": "custom:tempometer-gauge-card",
+       "entity": "sensor.temperature_chambre_enfant_temperature",
+       "min": 14,
+       "max": 40,
+       "title": "Chambre Enfants",
+       "card_style": "thermometer",
+       "decimals": 1,
+       "severity": {
+        "green": 19,
+        "yellow": 25,
+        "red": 30
+       }
+      },
+      {
+       "type": "custom:tempometer-gauge-card",
+       "entity": "sensor.temperature_chambre_temperature",
+       "min": 14,
+       "max": 40,
+       "title": "Chambre",
+       "card_style": "thermometer",
+       "decimals": 1,
+       "severity": {
+        "green": 19,
+        "yellow": 25,
+        "red": 30
+       }
+      },
+      {
+       "type": "custom:tempometer-gauge-card",
+       "entity": "sensor.temperature_salon_temperature",
+       "min": 14,
+       "max": 40,
+       "title": "Salon",
+       "card_style": "thermometer",
+       "decimals": 1,
+       "severity": {
+        "green": 19,
+        "yellow": 25,
+        "red": 30
+       }
+      },
+      {
+       "type": "custom:upcoming-media-card",
+       "entity": "sensor.emby_latest_films",
+       "title": "Films",
+       "max": 3,
+       "image_style": "fanart",
+       "text_shadows": false,
+       "box_shadows": false
+      },
+      {
+       "type": "custom:upcoming-media-card",
+       "entity": "sensor.emby_latest_series",
+       "title": "Séries",
+       "max": 3,
+       "image_style": "fanart",
+       "text_shadows": false,
+       "box_shadows": false
+      },
+      {
+       "type": "custom:meteofrance-weather-card",
+       "name": "Bagneux",
+       "entity": "weather.bagneux",
+       "cloudCoverEntity": "sensor.bagneux_cloud_cover",
+       "rainChanceEntity": "sensor.bagneux_rain_chance",
+       "freezeChanceEntity": "sensor.bagneux_freeze_chance",
+       "snowChanceEntity": "sensor.bagneux_snow_chance",
+       "uvEntity": "sensor.bagneux_uv",
+       "rainForecastEntity": "sensor.nantes_next_rain",
+       "alertEntity": "sensor.92_weather_alert",
+       "number_of_forecasts": "5",
+       "current": true,
+       "details": true,
+       "one_hour_forecast": true,
+       "alert_forecast": true,
+       "forecast": true
+      },
+      {
+       "type": "entities",
+       "entities": [
+        {
+         "entity": "sensor.destination_maison"
+        },
+        {
+         "entity": "sensor.destination_travail"
+        },
+        {
+         "entity": "sensor.destination_gurgy"
+        }
+       ],
+       "title": "Waze"
+      },
+      {
+       "type": "entities",
+       "entities": [
+        {
+         "type": "custom:slider-entity-row",
+         "entity": "light.cabine_douche",
+         "toggle": true
+        }
+       ],
+       "title": "Cabine douche",
+       "state_color": true
+      }
+     ]
+    },
+    {
+     "title": "CALENDRIER",
+     "path": "calendrier",
+     "icon": "mdi:calendar",
+     "badges": [],
+     "cards": [
+      {
+       "type": "custom:atomic-calendar-revive",
+       "name": "Mon Calendrier",
+       "eventTitleSize": 120,
+       "timeColor": "orange",
+       "eventTitleColor": "white",
+       "showDate": true,
+       "maxDaysToShow": 3,
+       "showMonth": true,
+       "entities": [
+        {
+         "entity": "calendar.agenda_perso"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "meta": {
+   "url_path": "test-grid",
+   "title": "Monitoring",
+   "icon": "mdi:home-analytics",
+   "require_admin": false,
+   "show_in_sidebar": true,
+   "mode": "storage"
+  },
+  "config": {
+   "views": [
+    {
+     "title": "Home",
+     "cards": [
+      {
+       "square": false,
+       "columns": 1,
+       "type": "grid",
+       "cards": [
+        {
+         "type": "custom:mushroom-title-card",
+         "title": "STATUT RASPBERRY",
+         "alignment": "center"
+        },
+        {
+         "square": true,
+         "columns": 2,
+         "type": "grid",
+         "cards": [
+          {
+           "type": "gauge",
+           "entity": "sensor.disk_use",
+           "name": "Utilisation disque ",
+           "unit": "Go",
+           "severity": {
+            "green": 0,
+            "yellow": 100,
+            "red": 110
+           },
+           "max": 107
+          },
+          {
+           "type": "gauge",
+           "entity": "sensor.disk_use_percent",
+           "name": "Utilisation disque %",
+           "severity": {
+            "green": 0,
+            "yellow": 75,
+            "red": 90
+           }
+          }
+         ]
+        },
+        {
+         "square": true,
+         "columns": 2,
+         "type": "grid",
+         "cards": [
+          {
+           "type": "gauge",
+           "entity": "sensor.processor_temperature",
+           "name": "Température Processeur",
+           "severity": {
+            "green": 1,
+            "yellow": 50,
+            "red": 65
+           }
+          },
+          {
+           "type": "gauge",
+           "entity": "sensor.processor_use",
+           "needle": false,
+           "name": "Utilisation Processeur",
+           "max": 100,
+           "severity": {
+            "green": 0,
+            "yellow": 75,
+            "red": 90
+           }
+          }
+         ]
+        },
+        {
+         "square": true,
+         "columns": 2,
+         "type": "grid",
+         "cards": [
+          {
+           "type": "gauge",
+           "entity": "sensor.memory_use_percent",
+           "max": 100,
+           "name": "Mémoire utilsée",
+           "severity": {
+            "green": 0,
+            "yellow": 75,
+            "red": 90
+           }
+          },
+          {
+           "type": "custom:mushroom-fan-card",
+           "entity": "sensor.rasp_fan_state",
+           "name": "Ventilateur boitier",
+           "icon": "mdi:fan",
+           "icon_animation": true,
+           "show_percentage_control": false,
+           "layout": "vertical",
+           "tap_action": {
+            "action": "none"
+           },
+           "hold_action": {
+            "action": "none"
+           },
+           "double_tap_action": {
+            "action": "none"
+           },
+           "hide_state": false,
+           "collapsible_controls": false,
+           "show_oscillate_control": false,
+           "fill_container": true
+          }
+         ]
+        },
+        {
+         "type": "custom:mushroom-title-card",
+         "title": "STATUT NAS",
+         "alignment": "center"
+        },
+        {
+         "square": true,
+         "columns": 2,
+         "type": "grid",
+         "cards": [
+          {
+           "type": "gauge",
+           "entity": "sensor.nas_temperature",
+           "needle": false,
+           "min": 1,
+           "max": 80,
+           "severity": {
+            "green": 1,
+            "yellow": 50,
+            "red": 65
+           }
+          },
+          {
+           "type": "gauge",
+           "min": 1,
+           "max": 100,
+           "severity": {
+            "green": 1,
+            "yellow": 70,
+            "red": 90
+           },
+           "unit": "%",
+           "name": "Nas Mémoire utilisée",
+           "entity": "sensor.nas_utilisation_de_la_memoire_reelle"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "square": false,
+       "columns": 1,
+       "type": "grid",
+       "cards": [
+        {
+         "type": "custom:mushroom-title-card",
+         "title": "MUSIQUE",
+         "alignment": "center"
+        },
+        {
+         "type": "media-control",
+         "entity": "media_player.echo_hugo"
+        },
+        {
+         "type": "custom:spotify-card",
+         "limit": 10
+        },
+        {
+         "type": "media-control",
+         "entity": "media_player.spotify_hugo_bigot"
+        }
+       ]
+      },
+      {
+       "square": false,
+       "columns": 1,
+       "type": "grid",
+       "cards": [
+        {
+         "type": "custom:mushroom-title-card",
+         "title": "LOCALISATION",
+         "alignment": "center"
+        },
+        {
+         "camera_view": "live",
+         "type": "picture-glance",
+         "title": "Creality K1C",
+         "entities": [
+          {
+           "entity": "camera.creality_k1c"
+          }
+         ],
+         "camera_image": "camera.creality_k1c",
+         "image": "http://192.0.2.30:8080/?action=snapshot"
+        },
+        {
+         "type": "map",
+         "entities": [
+          {
+           "entity": "device_tracker.portefeuille"
+          }
+         ],
+         "theme_mode": "auto"
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "theme": "Backend-selected",
+     "title": "ELECTRICITE",
+     "path": "planif",
+     "badges": [],
+     "cards": [
+      {
+       "chart_type": "bar",
+       "period": "day",
+       "days_to_show": 30,
+       "type": "statistics-graph",
+       "entities": [
+        "sensor.conso_journaliere"
+       ],
+       "stat_types": [
+        "state"
+       ]
+      },
+      {
+       "type": "entity",
+       "entity": "sensor.presence_bureau_illuminance",
+       "unit": "Lux",
+       "icon": "mdi:lightbulb-on-90",
+       "name": "Luminance"
+      },
+      {
+       "type": "media-control",
+       "entity": "media_player.yamaha_sr_c20a",
+       "theme": "waves"
+      },
+      {
+       "type": "custom:mushroom-media-player-card",
+       "entity": "media_player.yamaha_sr_c20a",
+       "name": "PC",
+       "primary_info": "name",
+       "secondary_info": "state",
+       "show_volume_level": true,
+       "volume_controls": [
+        "volume_mute",
+        "volume_buttons",
+        "volume_set"
+       ],
+       "media_controls": [
+        "on_off"
+       ],
+       "tap_action": {
+        "action": "more-info"
+       },
+       "collapsible_controls": false
+      },
+      {
+       "show_name": true,
+       "show_icon": true,
+       "type": "button",
+       "tap_action": {
+        "action": "call-service",
+        "service": "yamaha_sr_c20a.async_toggle_clear_voice",
+        "target": {}
+       },
+       "entity": "media_player.yamaha_sr_c20a"
+      },
+      {
+       "type": "entities",
+       "entities": [
+        {
+         "entity": "media_player.yamaha_sr_c20a"
+        },
+        {
+         "entity": "switch.yamaha_sr_c20a_clear_voice"
+        },
+        {
+         "entity": "switch.yamaha_sr_c20a_bass_ext"
+        },
+        {
+         "entity": "number.yamaha_sr_c20a_subwoofer"
+        },
+        {
+         "entity": "select.yamaha_sr_c20a_led"
+        }
+       ]
+      },
+      {
+       "type": "entities",
+       "entities": [
+        "counter.tireuse"
+       ]
+      },
+      {
+       "type": "gauge",
+       "entity": "counter.tireuse",
+       "name": "Bières",
+       "theme": "waves",
+       "max": 24,
+       "severity": {
+        "green": 11,
+        "yellow": 5,
+        "red": 0
+       }
+      }
+     ]
+    },
+    {
+     "title": "soundbar",
+     "path": "soundbar",
+     "badges": [],
+     "cards": [
+      {
+       "type": "custom:bubble-card",
+       "card_type": "button"
+      },
+      {
+       "type": "entities",
+       "entities": [
+        {
+         "type": "attribute",
+         "entity": "media_player.yamaha_sr_c20a",
+         "name": "ClearVoice",
+         "icon": "mdi:lan",
+         "attribute": "is_clear_voice"
+        }
+       ]
+      },
+      {
+       "type": "custom:upcoming-media-card",
+       "entity": "sensor.emby_latest_series",
+       "title": "Séries"
+      },
+      {
+       "type": "tile",
+       "entity": "input_boolean.alarme",
+       "features": [
+        {
+         "type": "toggle"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "meta": {
+   "url_path": "dashboard-nspanel",
+   "title": "NsPanel",
+   "icon": "mdi:tablet-dashboard",
+   "require_admin": false,
+   "show_in_sidebar": true,
+   "mode": "storage"
+  },
+  "config": {
+   "kiosk_mode": {
+    "mobile_settings": {
+     "hide_header": true
+    }
+   },
+   "views": [
+    {
+     "title": "Accueil",
+     "theme": "Mushroom Shadow",
+     "type": "custom:grid-layout",
+     "badges": [],
+     "cards": [
+      {
+       "square": false,
+       "type": "grid",
+       "cards": [
+        {
+         "square": false,
+         "type": "grid",
+         "cards": [
+          {
+           "type": "custom:mushroom-chips-card",
+           "chips": [
+            {
+             "type": "entity",
+             "entity": "person.hugo",
+             "content_info": "state",
+             "use_entity_picture": true
+            }
+           ],
+           "alignment": "center"
+          },
+          {
+           "type": "custom:mushroom-chips-card",
+           "chips": [
+            {
+             "type": "entity",
+             "entity": "sensor.sabnzbd_disk_free"
+            }
+           ],
+           "alignment": "center"
+          },
+          {
+           "type": "custom:mushroom-chips-card",
+           "chips": [
+            {
+             "type": "entity",
+             "entity": "update.home_assistant_google_drive_backup_update",
+             "content_info": "state",
+             "use_entity_picture": true
+            }
+           ],
+           "alignment": "center"
+          }
+         ],
+         "columns": 3
+        },
+        {
+         "square": false,
+         "type": "grid",
+         "cards": [
+          {
+           "type": "custom:mushroom-light-card",
+           "entity": "light.hue_go_bureau",
+           "layout": "horizontal",
+           "icon_type": "entity-picture"
+          },
+          {
+           "type": "custom:mushroom-light-card",
+           "entity": "light.hue_lightstrip_plus",
+           "fill_container": false
+          },
+          {
+           "type": "custom:mushroom-light-card",
+           "entity": "light.elements_9d16"
+          }
+         ],
+         "columns": 3
+        },
+        {
+         "square": false,
+         "type": "grid",
+         "cards": [
+          {
+           "type": "custom:mushroom-entity-card",
+           "entity": "light.awtrix_b5d8b4_matrix",
+           "icon": "mdi:clock-digital",
+           "name": "Horloge"
+          },
+          {
+           "type": "custom:mushroom-entity-card",
+           "entity": "switch.interrupteur_nspanel",
+           "icon": "mdi:tablet-dashboard",
+           "name": "Dashboard"
+          }
+         ],
+         "columns": 2
+        },
+        {
+         "square": false,
+         "type": "grid",
+         "cards": [
+          {
+           "type": "custom:mushroom-entity-card",
+           "entity": "sensor.temperature_chambre_temperature",
+           "name": "Bureau"
+          },
+          {
+           "type": "custom:mushroom-entity-card",
+           "entity": "sensor.temperature_chambre_enfant_temperature",
+           "name": "Enfants"
+          },
+          {
+           "type": "custom:mushroom-entity-card",
+           "entity": "sensor.temperature_salon_temperature",
+           "name": "Salon"
+          }
+         ]
+        },
+        {
+         "square": false,
+         "type": "grid",
+         "cards": [
+          {
+           "type": "custom:mushroom-entity-card",
+           "entity": "sensor.temperature_exterieur_temperature",
+           "name": "Extérieur"
+          },
+          {
+           "type": "custom:mushroom-entity-card",
+           "entity": "sensor.temperature_exterieur_pressure",
+           "name": "Baromètre"
+          }
+         ],
+         "columns": 2
+        },
+        {
+         "type": "custom:bubble-card",
+         "card_type": "separator",
+         "icon": "mdi:gesture-tap-button"
+        },
+        {
+         "type": "horizontal-stack",
+         "cards": [
+          {
+           "type": "custom:mushroom-template-card",
+           "primary": "",
+           "secondary": "",
+           "icon": "mdi:multimedia",
+           "tap_action": {
+            "action": "navigate",
+            "navigation_path": "#media"
+           },
+           "icon_color": "blue",
+           "layout": "vertical"
+          },
+          {
+           "type": "custom:mushroom-template-card",
+           "primary": "",
+           "secondary": "",
+           "icon": "mdi:weather-cloudy",
+           "icon_color": "yellow",
+           "layout": "vertical",
+           "tap_action": {
+            "action": "navigate",
+            "navigation_path": "#meteo"
+           }
+          },
+          {
+           "type": "custom:mushroom-template-card",
+           "primary": "",
+           "secondary": "",
+           "icon": "mdi:speaker",
+           "icon_color": "green",
+           "layout": "vertical",
+           "tap_action": {
+            "action": "navigate",
+            "navigation_path": "#spotify"
+           }
+          },
+          {
+           "type": "custom:mushroom-template-card",
+           "primary": "",
+           "secondary": "",
+           "icon": "mdi:nas",
+           "tap_action": {
+            "action": "navigate",
+            "navigation_path": "#nas"
+           },
+           "icon_color": "white",
+           "layout": "vertical",
+           "fill_container": false
+          },
+          {
+           "type": "custom:mushroom-template-card",
+           "primary": "",
+           "secondary": "",
+           "icon": "mdi:settings-helper",
+           "icon_color": "white",
+           "tap_action": {
+            "action": "navigate",
+            "navigation_path": "/lovelace/default_view"
+           },
+           "layout": "vertical",
+           "fill_container": true
+          }
+         ]
+        }
+       ],
+       "columns": 1
+      },
+      {
+       "type": "vertical-stack",
+       "cards": [
+        {
+         "type": "custom:bubble-card",
+         "card_type": "pop-up",
+         "hash": "#media",
+         "style": "ha-icon{\n    display: none !important;\n}\n",
+         "bg_color": "#000",
+         "bg_opacity": 10
+        },
+        {
+         "camera_view": "live",
+         "type": "picture-glance",
+         "title": "Creality K1C",
+         "entities": [
+          {
+           "entity": "camera.creality_k1c"
+          }
+         ],
+         "camera_image": "camera.creality_k1c"
+        },
+        {
+         "type": "grid",
+         "columns": 2,
+         "square": true,
+         "cards": [
+          {
+           "type": "custom:upcoming-media-card",
+           "entity": "sensor.emby_latest_films",
+           "title": "Films",
+           "max": 3,
+           "image_style": "fanart",
+           "text_shadows": false,
+           "box_shadows": false
+          },
+          {
+           "type": "custom:upcoming-media-card",
+           "entity": "sensor.emby_latest_series",
+           "title": "Séries",
+           "max": 3,
+           "image_style": "fanart",
+           "text_shadows": false,
+           "box_shadows": false
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "vertical-stack",
+       "cards": [
+        {
+         "type": "custom:bubble-card",
+         "card_type": "pop-up",
+         "hash": "#meteo",
+         "bg_color": "#000",
+         "bg_opacity": 10
+        },
+        {
+         "type": "custom:meteofrance-weather-card",
+         "name": "Bagneux",
+         "entity": "weather.bagneux",
+         "cloudCoverEntity": "sensor.bagneux_cloud_cover",
+         "rainChanceEntity": "sensor.bagneux_rain_chance",
+         "freezeChanceEntity": "sensor.bagneux_freeze_chance",
+         "snowChanceEntity": "sensor.bagneux_snow_chance",
+         "uvEntity": "sensor.bagneux_uv",
+         "rainForecastEntity": "sensor.nantes_next_rain",
+         "alertEntity": "sensor.92_weather_alert",
+         "number_of_forecasts": "5",
+         "current": true,
+         "details": true,
+         "one_hour_forecast": true,
+         "alert_forecast": true,
+         "forecast": true
+        }
+       ]
+      },
+      {
+       "type": "vertical-stack",
+       "cards": [
+        {
+         "type": "custom:bubble-card",
+         "card_type": "pop-up",
+         "hash": "#spotify",
+         "bg_color": "#000",
+         "bg_opacity": 9
+        },
+        {
+         "type": "grid",
+         "columns": 1,
+         "square": false,
+         "cards": [
+          {
+           "type": "entities",
+           "entities": [
+            {
+             "entity": "media_player.yamaha_sr_c20a"
+            },
+            {
+             "entity": "switch.yamaha_sr_c20a_bass_ext",
+             "name": "Bass Extension"
+            },
+            {
+             "entity": "switch.yamaha_sr_c20a_clear_voice",
+             "name": "Clear Voice"
+            },
+            {
+             "entity": "number.yamaha_sr_c20a_subwoofer",
+             "name": "Subwoofer"
+            },
+            {
+             "entity": "select.yamaha_sr_c20a_led",
+             "name": "Led"
+            }
+           ]
+          },
+          {
+           "type": "custom:bubble-card",
+           "card_type": "separator"
+          },
+          {
+           "type": "media-control",
+           "entity": "media_player.echo_hugo"
+          },
+          {
+           "type": "custom:bubble-card",
+           "card_type": "separator"
+          },
+          {
+           "type": "media-control",
+           "entity": "media_player.spotify_hugo_bigot"
+          }
+         ]
+        }
+       ]
+      },
+      {
+       "type": "vertical-stack",
+       "cards": [
+        {
+         "type": "custom:bubble-card",
+         "card_type": "pop-up",
+         "hash": "#nas",
+         "bg_color": "#000",
+         "bg_opacity": 10
+        },
+        {
+         "type": "grid",
+         "square": false,
+         "columns": 1,
+         "cards": [
+          {
+           "square": true,
+           "columns": 2,
+           "type": "grid",
+           "cards": [
+            {
+             "type": "gauge",
+             "entity": "sensor.disk_use",
+             "name": "Utilisation disque ",
+             "unit": "Go",
+             "severity": {
+              "green": 0,
+              "yellow": 100,
+              "red": 110
+             },
+             "max": 107
+            },
+            {
+             "type": "gauge",
+             "entity": "sensor.disk_use_percent",
+             "name": "Utilisation disque %",
+             "severity": {
+              "green": 0,
+              "yellow": 75,
+              "red": 90
+             }
+            }
+           ]
+          },
+          {
+           "square": true,
+           "columns": 2,
+           "type": "grid",
+           "cards": [
+            {
+             "type": "gauge",
+             "entity": "sensor.processor_temperature",
+             "name": "Température Processeur",
+             "severity": {
+              "green": 1,
+              "yellow": 50,
+              "red": 65
+             }
+            },
+            {
+             "type": "gauge",
+             "entity": "sensor.processor_use",
+             "needle": false,
+             "name": "Utilisation Processeur",
+             "max": 100,
+             "severity": {
+              "green": 0,
+              "yellow": 75,
+              "red": 90
+             }
+            }
+           ]
+          },
+          {
+           "square": true,
+           "columns": 2,
+           "type": "grid",
+           "cards": [
+            {
+             "type": "gauge",
+             "entity": "sensor.memory_use_percent",
+             "max": 100,
+             "name": "Mémoire utilsée",
+             "severity": {
+              "green": 0,
+              "yellow": 75,
+              "red": 90
+             }
+            },
+            {
+             "type": "custom:mushroom-fan-card",
+             "entity": "sensor.rasp_fan_state",
+             "name": "Ventilateur boitier",
+             "icon": "mdi:fan",
+             "icon_animation": true,
+             "show_percentage_control": false,
+             "layout": "vertical",
+             "tap_action": {
+              "action": "none"
+             },
+             "hold_action": {
+              "action": "none"
+             },
+             "double_tap_action": {
+              "action": "none"
+             },
+             "hide_state": false,
+             "collapsible_controls": false,
+             "show_oscillate_control": false,
+             "fill_container": true
+            }
+           ]
+          },
+          {
+           "square": true,
+           "columns": 2,
+           "type": "grid",
+           "cards": [
+            {
+             "type": "gauge",
+             "entity": "sensor.nas_temperature",
+             "needle": false,
+             "min": 1,
+             "max": 80,
+             "severity": {
+              "green": 1,
+              "yellow": 50,
+              "red": 65
+             }
+            },
+            {
+             "type": "gauge",
+             "entity": "sensor.nas_utilisation_de_la_memoire_reelle",
+             "min": 1,
+             "max": 100,
+             "severity": {
+              "green": 1,
+              "yellow": 70,
+              "red": 90
+             },
+             "unit": "%",
+             "name": "Nas Mémoire utilisée"
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "meta": {
+   "url_path": "securite-alarme",
+   "title": "Sécurité",
+   "icon": "mdi:shield-home",
+   "require_admin": false,
+   "show_in_sidebar": true,
+   "mode": "storage"
+  },
+  "config": {
+   "views": [
+    {
+     "icon": "mdi:shield-home",
+     "max_columns": 3,
+     "path": "securite",
+     "sections": [
+      {
+       "cards": [
+        {
+         "heading": "Alarme",
+         "icon": "mdi:shield-lock",
+         "type": "heading"
+        },
+        {
+         "type": "alarm-panel",
+         "entity": "alarm_control_panel.alarmo",
+         "name": "Alarme",
+         "states": [
+          "arm_away"
+         ]
+        },
+        {
+         "type": "tile",
+         "entity": "input_boolean.presence_a_la_maison",
+         "name": "Présence à la maison (bloque l'armement auto)",
+         "icon": "mdi:home-group",
+         "tap_action": {
+          "action": "toggle"
+         }
+        },
+        {
+         "color": "red",
+         "entity": "siren.heiman_siren",
+         "features": [
+          {
+           "type": "toggle"
+          }
+         ],
+         "icon": "mdi:alarm-light",
+         "name": "Sirène Heiman",
+         "type": "tile"
+        },
+        {
+         "color": "red",
+         "entity": "switch.0xa4c13860c082643c_alarm",
+         "icon": "mdi:alarm-light-outline",
+         "name": "Sirène Zigbee",
+         "type": "tile"
+        }
+       ],
+       "type": "grid"
+      },
+      {
+       "cards": [
+        {
+         "heading": "Caméras",
+         "icon": "mdi:cctv",
+         "type": "heading"
+        },
+        {
+         "camera_image": "camera.living_camera_living_mainstream",
+         "entity": "camera.living_camera_living_mainstream",
+         "name": "Salon",
+         "show_name": true,
+         "show_state": false,
+         "type": "picture-entity"
+        },
+        {
+         "type": "picture-entity",
+         "entity": "camera.chambre",
+         "camera_image": "camera.chambre"
+        }
+       ],
+       "type": "grid"
+      },
+      {
+       "cards": [
+        {
+         "heading": "Détections",
+         "icon": "mdi:motion-sensor",
+         "type": "heading"
+        },
+        {
+         "type": "tile",
+         "entity": "binary_sensor.living_camera_living_person_detection",
+         "name": "Personne — Salon",
+         "color": "red",
+         "vertical": false,
+         "features_position": "bottom"
+        },
+        {
+         "type": "tile",
+         "entity": "binary_sensor.chambre_person_occupancy",
+         "name": "Personne - Chambre",
+         "icon": "mdi:motion-sensor",
+         "color": "red",
+         "vertical": false,
+         "features_position": "bottom"
+        }
+       ],
+       "type": "grid"
+      },
+      {
+       "cards": [
+        {
+         "type": "heading",
+         "heading": "Automatisations",
+         "icon": "mdi:robot"
+        },
+        {
+         "type": "tile",
+         "entity": "automation.alarmo_intrusion_enregistrement_sirene",
+         "name": "Intrusion (sirènes + vidéo)",
+         "features": [
+          {
+           "type": "toggle"
+          }
+         ]
+        },
+        {
+         "type": "tile",
+         "entity": "automation.alarmo_fin_d_alerte",
+         "name": "Fin d'alerte",
+         "features": [
+          {
+           "type": "toggle"
+          }
+         ]
+        },
+        {
+         "type": "tile",
+         "entity": "automation.alarme_armement_auto_apres_1h_d_absence",
+         "name": "Armement auto (absence 1h)",
+         "features": [
+          {
+           "type": "toggle"
+          }
+         ]
+        },
+        {
+         "type": "tile",
+         "entity": "automation.alarme_desarmement_auto_a_l_arrivee",
+         "name": "Désarmement auto (arrivée)",
+         "features": [
+          {
+           "type": "toggle"
+          }
+         ]
+        }
+       ],
+       "type": "grid"
+      },
+      {
+       "cards": [
+        {
+         "heading": "État des sirènes",
+         "icon": "mdi:battery-alert",
+         "type": "heading"
+        },
+        {
+         "entity": "sensor.heiman_siren_battery",
+         "name": "Batterie sirène Heiman",
+         "type": "tile"
+        },
+        {
+         "entity": "sensor.0xa4c13860c082643c_battpercentage",
+         "name": "Batterie sirène Zigbee",
+         "type": "tile"
+        },
+        {
+         "entity": "select.0xa4c13860c082643c_volume",
+         "features": [
+          {
+           "type": "select-options"
+          }
+         ],
+         "name": "Volume sirène Zigbee",
+         "type": "tile"
+        }
+       ],
+       "type": "grid"
+      },
+      {
+       "cards": [
+        {
+         "heading": "Journal (24h)",
+         "icon": "mdi:history",
+         "type": "heading"
+        },
+        {
+         "hours_to_show": 24,
+         "type": "logbook",
+         "target": {
+          "entity_id": [
+           "alarm_control_panel.alarmo",
+           "input_boolean.presence_a_la_maison",
+           "siren.heiman_siren",
+           "switch.0xa4c13860c082643c_alarm",
+           "binary_sensor.living_camera_living_person_detection",
+           "binary_sensor.chambre_person_occupancy"
+          ]
+         }
+        }
+       ],
+       "type": "grid"
+      }
+     ],
+     "title": "Sécurité",
+     "type": "sections"
+    }
+   ]
+  }
+ },
+ {
+  "meta": {
+   "url_path": "apercu-3",
+   "title": "Aperçu",
+   "icon": "mdi:home",
+   "require_admin": false,
+   "show_in_sidebar": true,
+   "mode": "storage"
+  },
+  "config": {
+   "background": "var(--background-image)",
+   "swipe_nav": {
+    "animate": "swipe",
+    "prevent_default": true,
+    "swipe_amount": 30,
+    "wrap": false
+   },
+   "title": "Maison",
+   "views": [
+    {
+     "badges": [
+      {
+       "entity": "binary_sensor.home_assistant_versions_update_available",
+       "name": "Update"
+      },
+      {
+       "entity": "binary_sensor.rpi_power_status"
+      },
+      {
+       "entity": "person.hugo",
+       "name": "Hugo",
+       "style": ":host {\n  {% if is_state('person.hugo','not_home') %}\n   --label-badge-red: purple;\n   {% endif %}\n  {% if is_state('person.hugo','home') %}\n   --label-badge-red: green;\n   {% endif %}\n}\n"
+      },
+      {
+       "entity": "sensor.sabnzbd_disk_free",
+       "name": "Sab disk free"
+      },
+      {
+       "entity": "sensor.interrupteur_sans_fil_battery",
+       "name": "Interrupteur Living"
+      },
+      {
+       "entity": "binary_sensor.backups_stale"
+      }
+     ],
+     "icon": "mdi:home",
+     "max_columns": 3,
+     "path": "default_view",
+     "sections": [
+      {
+       "cards": [
+        {
+         "type": "vertical-stack",
+         "cards": [
+          {
+           "type": "alarm-panel",
+           "entity": "alarm_control_panel.alarmo",
+           "name": "Alarme",
+           "states": [
+            "arm_away"
+           ]
+          },
+          {
+           "type": "tile",
+           "entity": "input_boolean.presence_a_la_maison",
+           "name": "Présence à la maison",
+           "icon": "mdi:home-group",
+           "tap_action": {
+            "action": "toggle"
+           }
+          }
+         ]
+        },
+        {
+         "entities": [
+          {
+           "entity": "light.hue_go_bureau",
+           "toggle": true,
+           "type": "custom:slider-entity-row"
+          },
+          {
+           "type": "divider"
+          },
+          {
+           "entity": "light.hue_lightstrip_plus",
+           "toggle": true,
+           "type": "custom:slider-entity-row"
+          },
+          {
+           "type": "divider"
+          },
+          {
+           "entity": "light.elements_9d16",
+           "toggle": true,
+           "type": "custom:slider-entity-row"
+          },
+          {
+           "entity": "light.wled",
+           "toggle": true,
+           "type": "custom:slider-entity-row"
+          },
+          "light.awtrix_b5d8b4_matrix",
+          "switch.interrupteur_nspanel"
+         ],
+         "state_color": true,
+         "title": "Bureau",
+         "type": "entities"
+        },
+        {
+         "entities": [
+          "light.hue_play_gradient_lightstrip_1",
+          "light.hue_play_gauche",
+          "light.hue_play_droite",
+          "light.hue_play_centre",
+          "light.halogene",
+          "light.hue_go_salon",
+          "switch.radiateur_salon"
+         ],
+         "title": "Salon",
+         "type": "entities"
+        },
+        {
+         "entities": [
+          {
+           "entity": "switch.0x54ef4410003a6d55"
+          },
+          {
+           "entity": "switch.0x54ef4410003a66f3"
+          },
+          {
+           "entity": "switch.interrupteur_living_right"
+          }
+         ],
+         "title": "Living",
+         "type": "entities"
+        },
+        {
+         "entities": [
+          {
+           "entity": "light.cabine_douche",
+           "toggle": true,
+           "type": "custom:slider-entity-row"
+          }
+         ],
+         "state_color": true,
+         "title": "Cabine douche",
+         "type": "entities"
+        }
+       ],
+       "type": "grid"
+      },
+      {
+       "cards": [
+        {
+         "entity": "climate.netatmo_smart_thermostat",
+         "type": "thermostat"
+        },
+        {
+         "aggregate_func": "max",
+         "entities": [
+          {
+           "entity": "sensor.radiateur_salon_power"
+          }
+         ],
+         "font_size_header": 20,
+         "group_by": "date",
+         "hour24": true,
+         "hours_to_show": 168,
+         "icon": "mdi:flash",
+         "name": "Radiateur",
+         "show": {
+          "graph": "bar"
+         },
+         "type": "custom:mini-graph-card"
+        },
+        {
+         "decimals": 0,
+         "entity": "sensor.temperature_exterieur_pressure",
+         "max": 1050,
+         "min": 950,
+         "severity": {
+          "green": 1015,
+          "red": 950,
+          "yellow": 1000
+         },
+         "title": "Barometre",
+         "type": "custom:tempometer-gauge-card"
+        },
+        {
+         "card_style": "thermometer",
+         "decimals": 1,
+         "entity": "sensor.temperature_exterieur_temperature",
+         "max": 40,
+         "min": -15,
+         "severity": {
+          "green": 20,
+          "red": -15,
+          "yellow": 10
+         },
+         "title": "Extérieur",
+         "type": "custom:tempometer-gauge-card"
+        },
+        {
+         "card_style": "thermometer",
+         "decimals": 1,
+         "entity": "sensor.temperature_chambre_enfant_temperature",
+         "max": 40,
+         "min": 14,
+         "severity": {
+          "green": 19,
+          "red": 30,
+          "yellow": 25
+         },
+         "title": "Chambre Enfants",
+         "type": "custom:tempometer-gauge-card"
+        },
+        {
+         "card_style": "thermometer",
+         "decimals": 1,
+         "entity": "sensor.temperature_chambre_temperature",
+         "max": 40,
+         "min": 14,
+         "severity": {
+          "green": 19,
+          "red": 30,
+          "yellow": 25
+         },
+         "title": "Chambre",
+         "type": "custom:tempometer-gauge-card"
+        },
+        {
+         "card_style": "thermometer",
+         "decimals": 1,
+         "entity": "sensor.temperature_salon_temperature",
+         "max": 40,
+         "min": 14,
+         "severity": {
+          "green": 19,
+          "red": 30,
+          "yellow": 25
+         },
+         "title": "Salon",
+         "type": "custom:tempometer-gauge-card"
+        }
+       ],
+       "type": "grid"
+      },
+      {
+       "cards": [
+        {
+         "alertEntity": "sensor.92_weather_alert",
+         "alert_forecast": true,
+         "cloudCoverEntity": "sensor.bagneux_cloud_cover",
+         "current": true,
+         "details": true,
+         "entity": "weather.bagneux",
+         "forecast": true,
+         "freezeChanceEntity": "sensor.bagneux_freeze_chance",
+         "name": "Bagneux",
+         "number_of_forecasts": "5",
+         "one_hour_forecast": true,
+         "rainChanceEntity": "sensor.bagneux_rain_chance",
+         "rainForecastEntity": "sensor.nantes_next_rain",
+         "snowChanceEntity": "sensor.bagneux_snow_chance",
+         "type": "custom:meteofrance-weather-card",
+         "uvEntity": "sensor.bagneux_uv"
+        },
+        {
+         "entities": [
+          {
+           "entity": "sensor.destination_maison"
+          },
+          {
+           "entity": "sensor.destination_travail"
+          },
+          {
+           "entity": "sensor.destination_gurgy"
+          }
+         ],
+         "title": "Waze",
+         "type": "entities"
+        },
+        {
+         "box_shadows": false,
+         "entity": "sensor.emby_latest_films",
+         "image_style": "fanart",
+         "max": 3,
+         "text_shadows": false,
+         "title": "Films",
+         "type": "custom:upcoming-media-card"
+        },
+        {
+         "box_shadows": false,
+         "entity": "sensor.emby_latest_series",
+         "image_style": "fanart",
+         "max": 3,
+         "text_shadows": false,
+         "title": "Séries",
+         "type": "custom:upcoming-media-card"
+        }
+       ],
+       "type": "grid"
+      }
+     ],
+     "title": "Accueil",
+     "type": "sections"
+    },
+    {
+     "badges": [],
+     "cards": [
+      {
+       "entities": [
+        {
+         "entity": "calendar.agenda_perso"
+        }
+       ],
+       "eventTitleColor": "white",
+       "eventTitleSize": 120,
+       "maxDaysToShow": 3,
+       "name": "Mon Calendrier",
+       "showDate": true,
+       "showMonth": true,
+       "timeColor": "orange",
+       "type": "custom:atomic-calendar-revive"
+      }
+     ],
+     "icon": "mdi:calendar",
+     "path": "calendrier",
+     "title": "CALENDRIER"
+    }
+   ]
+  }
+ }
+]

@@ -18,10 +18,10 @@
 2. **Jalons (M) ≠ phases de migration (P).**
    - Un jalon M produit du code.
    - Une phase P bascule quelque chose dans la maison, et **seulement avec l'accord explicite de Hugo**.
-   - Un automatisme importé est **désactivé par défaut**.
-3. **Jamais deux pilotes pour un même appareil ou automatisme.**
+   - Une automatisation importée est **désactivé par défaut**.
+3. **Jamais deux pilotes pour un même appareil ou une même automatisation.**
    - Les ESP32 de l'alarme (`lecteur-alarme`, `tag-reader`) ne sont **jamais** connectés au clone pendant le développement. Les tests ESPHome se font sur banc (`test-nfc`, ESP de rechange) ou contre un ESP simulé.
-4. **L'alarme d'abord en sûreté.** Tout code qui touche `rusthome-alarm`, les automatismes de la catégorie « Alarme » ou les intégrations sirène, badge et caméra demande :
+4. **L'alarme d'abord en sûreté.** Tout code qui touche `rusthome-alarm`, les automatisations de la catégorie « Alarme » ou les intégrations sirène, badge et caméra demande :
    - des tests couvrant chaque transition d'état ;
    - une mention explicite dans le compte rendu.
 5. **Aucun secret dans le dépôt.**
@@ -36,7 +36,7 @@
 - **Tests unitaires obligatoires.**
   - Toute fonction publique non triviale, toute règle métier et tout parseur ou importeur arrive avec ses tests, dans le même changement.
   - Les tests vivent dans `#[cfg(test)] mod tests` à côté du code. Les tests d'intégration d'un crate vont dans `crates/<crate>/tests/`.
-  - **Corpus d'import** : les exports de l'inventaire servent de fixtures, mais `inventaire/` **n’est pas versionné** (données de la maison). On en copie un extrait **expurgé** (sans secret, sans adresse inutile) dans `crates/<crate>/tests/fixtures/`, et aucun code ne lit `inventaire/`. Les 44 automatismes doivent s'importer sans perte : un test le vérifie.
+  - **Corpus d'import** : les exports de l'inventaire servent de fixtures, mais `inventaire/` **n’est pas versionné** (données de la maison). On en copie un extrait **expurgé** (sans secret, sans adresse inutile) dans `crates/<crate>/tests/fixtures/`, et aucun code ne lit `inventaire/`. Les 44 automatisations doivent s'importer sans perte : un test le vérifie.
   - **Temps** : pas de `sleep` réel. Utiliser `tokio::time::pause()` / `advance()` et une horloge injectable (`trait Clock`).
   - **Réseau** : pas d'appel réseau réel dans les tests. Utiliser des doubles : Mosquitto embarqué (`rumqttd`) ou des mocks, `wiremock` pour HTTP, un serveur `esphome-native-api` simulé.
   - Tests de propriétés (`proptest`) pour les parseurs YAML et Jinja et pour le round-trip UI ↔ YAML.
@@ -75,7 +75,7 @@ Cible : Ubuntu 24.04 sous WSL2, x86_64. Docker est déjà installé.
 ```bash
 # Rust stable (installé dans ~/.cargo, sans sudo) + composants
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal -c clippy -c rustfmt
-cargo install just --locked
+cargo install just watchexec-cli --locked   # watchexec : relance du backend par `just dev`
 # Node : SvelteKit 3 exige Node ≥ 22.17 → Node 24 via nvm (version épinglée dans .nvmrc ;
 # la version par défaut de nvm n'est pas modifiée)
 nvm install 24 && nvm use        # à refaire dans chaque nouveau terminal du projet
@@ -91,7 +91,7 @@ Déjà présents dans le WSL de Hugo : `build-essential`, `pkg-config`, `libssl-
 nvm use                         # Node 24 (cf. .nvmrc)
 cp .env.example .env            # par défaut : données de démo ; pour le miroir HA, renseigner HA_URL / HA_TOKEN
 just dev-deps                   # docker compose -f deploy/dev/compose.yaml up -d : Mosquitto de dev (port 1884), ntfy de dev
-just dev                        # backend (cargo watch) + frontend (vite) en parallèle
+just dev                        # backend (relancé par watchexec) + frontend (vite) en parallèle
 ```
 
 - UI : http://localhost:5173 (Vite, proxifié vers l'API). API : http://localhost:8124.
@@ -104,12 +104,12 @@ just dev                        # backend (cargo watch) + frontend (vite) en par
 
 | Commande | Effet |
 |---|---|
-| `just dev` | Backend + frontend (Vite en rechargement à chaud ; backend relancé à la main) |
+| `just dev` | Backend + frontend (Vite en rechargement à chaud ; backend recompilé et relancé par watchexec) |
 | `just dev-deps` / `just dev-down` | Démarre ou arrête les dépendances Docker de dev |
 | `just check` | Tous les lints et tous les tests (§3.3) |
 | `just test` | Tests Rust + frontend |
 | `just gen-types` | Régénère `frontend/src/lib/api-types.ts` depuis les schémas Rust (`just check` échoue s'ils divergent) |
-| `just import-fixtures` | *(à venir, M3)* Importe le corpus d’automatismes de l’inventaire dans la base de dev |
+| `just import-fixtures` | *(à venir, M3)* Importe le corpus d’automatisations de l’inventaire dans la base de dev |
 | `just build` | Binaire release + frontend embarqué |
 | `just docker` / `just docker-multiarch` | Image Docker locale / multi-architecture (amd64 + arm64) |
 

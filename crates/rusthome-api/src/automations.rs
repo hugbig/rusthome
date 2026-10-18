@@ -40,7 +40,7 @@ fn admin(user: &User) -> Result<(), ApiError> {
     }
 }
 
-async fn persist(s: &ApiState, id: &str) -> Result<(), ApiError> {
+pub(crate) async fn persist(s: &ApiState, id: &str) -> Result<(), ApiError> {
     let (Some(rec), Ok(c)) = (s.recorder.as_ref(), ctx(s)) else {
         return Ok(());
     };

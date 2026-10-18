@@ -10,6 +10,8 @@
 //! Only camera names and tracked objects are kept from the config: it also
 //! holds the MQTT password and RTSP URLs with credentials.
 
+pub mod media;
+
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
@@ -182,6 +184,8 @@ pub struct Frigate {
     prefix: String,
     api: Url,
     http: reqwest::Client,
+    /// For media files: connect timeout only (clips stream for a while).
+    media_http: reqwest::Client,
     publisher: Arc<dyn Publisher>,
     cameras: Mutex<Vec<Camera>>,
     /// `{kind}:{suffix}` → entity id
@@ -209,6 +213,9 @@ impl Frigate {
             http: reqwest::Client::builder()
                 .timeout(Duration::from_secs(10))
                 .build()?,
+            media_http: reqwest::Client::builder()
+                .connect_timeout(Duration::from_secs(10))
+                .build()?,
             publisher,
             cameras: Mutex::default(),
             ids: Mutex::default(),
@@ -224,6 +231,29 @@ impl Frigate {
             .error_for_status()?
             .json()
             .await
+    }
+
+    /// Frigate camera name behind a `camera.*` entity, if Frigate owns it.
+    pub fn camera_for(&self, entity_id: &EntityId) -> Option<String> {
+        self.ids
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .iter()
+            .find_map(|(key, id)| {
+                (id == entity_id)
+                    .then(|| key.strip_prefix("camera:").map(str::to_owned))
+                    .flatten()
+            })
+    }
+
+    /// Latest JPEG of a camera (`GET /api/<camera>/latest.jpg`, read-only).
+    pub async fn snapshot(&self, camera: &str) -> Result<Vec<u8>, reqwest::Error> {
+        let url = format!(
+            "{}/api/{camera}/latest.jpg",
+            self.api.as_str().trim_end_matches('/')
+        );
+        let res = self.http.get(url).send().await?.error_for_status()?;
+        Ok(res.bytes().await?.to_vec())
     }
 
     /// Registers cameras and entities; initial states from in-progress events.

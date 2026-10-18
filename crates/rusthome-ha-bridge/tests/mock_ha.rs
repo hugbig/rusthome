@@ -210,3 +210,191 @@ fn natively_owned_entities_are_not_overwritten() {
         "z2m"
     );
 }
+
+#[test]
+fn silent_native_entities_are_seeded_from_ha() {
+    use rusthome_import::{HaEntity, HaSnapshot};
+    use rusthome_model::{EntityEntry, EntityStatus, State};
+
+    let hub = Hub::new(Arc::new(SystemClock));
+    let temp = EntityId::parse("sensor.salon_temperature").unwrap();
+    // Zigbee2MQTT owns the sensor (registry kept from a previous run) but the
+    // sensor has not published since the restart.
+    hub.registries.upsert_entity(EntityEntry {
+        uid: "z2m-2".into(),
+        entity_id: temp.clone(),
+        integration: "z2m".into(),
+        unique_id: None,
+        device_id: None,
+        name: None,
+        area_id: None,
+        labels: vec![],
+        icon: None,
+        hidden: false,
+        disabled: false,
+        status: EntityStatus::Active,
+    });
+    let snapshot = HaSnapshot {
+        entities: vec![HaEntity {
+            id: "ha-2".into(),
+            entity_id: "sensor.salon_temperature".into(),
+            platform: "mqtt".into(),
+            ..HaEntity::default()
+        }],
+        ..HaSnapshot::default()
+    };
+    let from_ha: State =
+        serde_json::from_value(state("sensor.salon_temperature", "21.4", json!({}))).unwrap();
+    let report = apply(&hub, &import_registries(&snapshot), vec![from_ha]);
+    assert_eq!(report.states, 1, "seeded");
+    assert_eq!(hub.states.get(&temp).unwrap().state, "21.4");
+    assert_eq!(
+        hub.registries
+            .entity_by_entity_id(&temp)
+            .unwrap()
+            .integration,
+        "z2m",
+        "ownership unchanged"
+    );
+}
+
+#[tokio::test]
+async fn fetches_dashboards_read_only() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = url::Url::parse(&format!("http://{}", listener.local_addr().unwrap())).unwrap();
+    let server = tokio::spawn(async move {
+        let (tcp, _) = listener.accept().await.unwrap();
+        let mut ws = tokio_tungstenite::accept_async(tcp).await.unwrap();
+        let allowed: Vec<&str> = Command::ALL.iter().map(|c| c.message_type()).collect();
+        ws.send(Message::text(json!({"type": "auth_required"}).to_string()))
+            .await
+            .unwrap();
+        let _ = ws.next().await;
+        ws.send(Message::text(json!({"type": "auth_ok"}).to_string()))
+            .await
+            .unwrap();
+        let mut asked = Vec::new();
+        while let Some(Ok(Message::Text(text))) = ws.next().await {
+            let req: Value = serde_json::from_str(text.as_str()).unwrap();
+            let t = req["type"].as_str().unwrap();
+            assert!(allowed.contains(&t), "non read-only command: {t}");
+            let reply = match (t, req["url_path"].as_str()) {
+                ("lovelace/dashboards/list", _) => json!({"success": true, "result": [
+                    {"url_path": "lovelace", "title": "Aperçu", "mode": "yaml"},
+                    {"url_path": "securite-alarme", "title": "Sécurité"},
+                    {"url_path": "map", "title": "Map"}
+                ]}),
+                ("lovelace/config", None) => {
+                    json!({"success": true, "result": {"views": [{"title": "Accueil"}]}})
+                }
+                ("lovelace/config", Some("securite-alarme")) => {
+                    json!({"success": true, "result": {"views": [{"type": "sections"}]}})
+                }
+                ("todo/item/list", _) => {
+                    assert_eq!(req["entity_id"], "todo.courses");
+                    json!({"success": true, "result": {"items": [{"summary": "Pain", "status": "needs_action"}]}})
+                }
+                ("lovelace/config", Some("map")) => json!({"success": false,
+                    "error": {"code": "config_not_found", "message": "No config found."}}),
+                other => panic!("unexpected {other:?}"),
+            };
+            asked.push(req["url_path"].as_str().unwrap_or("-").to_owned());
+            let mut reply = reply;
+            reply["id"] = req["id"].clone();
+            reply["type"] = "result".into();
+            ws.send(Message::text(reply.to_string())).await.unwrap();
+        }
+        asked
+    });
+    let mut conn = Connection::connect(&url, "t").await.unwrap();
+    let dashboards = conn.fetch_dashboards().await.unwrap();
+    let todo = conn.todo_items("todo.courses").await.unwrap();
+    assert_eq!(todo[0]["summary"], "Pain");
+    drop(conn);
+    let paths: Vec<&str> = dashboards
+        .iter()
+        .map(|d| d.meta["url_path"].as_str().unwrap())
+        .collect();
+    assert_eq!(paths, ["lovelace", "securite-alarme"]);
+    assert_eq!(dashboards[0].meta["mode"], "yaml", "listed metadata kept");
+    assert_eq!(dashboards[1].config["views"][0]["type"], "sections");
+    assert_eq!(
+        server.await.unwrap(),
+        ["-", "-", "securite-alarme", "map", "-"]
+    );
+}
+
+#[tokio::test]
+async fn energy_statistics_and_forecast_are_reads() {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = url::Url::parse(&format!("http://{}", listener.local_addr().unwrap())).unwrap();
+    tokio::spawn(async move {
+        let (tcp, _) = listener.accept().await.unwrap();
+        let mut ws = tokio_tungstenite::accept_async(tcp).await.unwrap();
+        let allowed: Vec<&str> = Command::ALL.iter().map(|c| c.message_type()).collect();
+        ws.send(Message::text(json!({"type": "auth_required"}).to_string()))
+            .await
+            .unwrap();
+        let _ = ws.next().await;
+        ws.send(Message::text(json!({"type": "auth_ok"}).to_string()))
+            .await
+            .unwrap();
+        while let Some(Ok(Message::Text(text))) = ws.next().await {
+            let req: Value = serde_json::from_str(text.as_str()).unwrap();
+            let t = req["type"].as_str().unwrap();
+            assert!(allowed.contains(&t), "non read-only command: {t}");
+            let id = req["id"].clone();
+            let ok = |result: Value| {
+                json!({"id": id, "type": "result", "success": true, "result": result}).to_string()
+            };
+            match t {
+                "energy/get_prefs" => ws
+                    .send(Message::text(ok(
+                        json!({"energy_sources": [], "device_consumption": []}),
+                    )))
+                    .await
+                    .unwrap(),
+                "recorder/statistics_during_period" => {
+                    assert_eq!(req["period"], "day");
+                    assert_eq!(req["statistic_ids"][0], "sensor.linky");
+                    ws.send(Message::text(ok(
+                        json!({"sensor.linky": [{"start": 0, "change": 4.2}]}),
+                    )))
+                    .await
+                    .unwrap();
+                }
+                "weather/subscribe_forecast" => {
+                    assert_eq!(req["forecast_type"], "daily");
+                    ws.send(Message::text(ok(Value::Null))).await.unwrap();
+                    ws.send(Message::text(
+                        json!({"id": id, "type": "event", "event": {"type": "daily",
+                               "forecast": [{"condition": "rainy", "temperature": 14}]}})
+                        .to_string(),
+                    ))
+                    .await
+                    .unwrap();
+                }
+                other => panic!("unexpected {other}"),
+            }
+        }
+    });
+    let mut conn = Connection::connect(&url, "t").await.unwrap();
+    let prefs = conn.energy_prefs().await.unwrap();
+    assert!(prefs["energy_sources"].is_array());
+    let stats = conn
+        .statistics(
+            &["sensor.linky".to_owned()],
+            "2026-10-10T00:00:00Z",
+            "2026-10-17T00:00:00Z",
+            "day",
+            &["change"],
+        )
+        .await
+        .unwrap();
+    assert_eq!(stats["sensor.linky"][0]["change"], 4.2);
+    let fc = conn
+        .weather_forecast("weather.bagneux", "daily")
+        .await
+        .unwrap();
+    assert_eq!(fc[0]["condition"], "rainy");
+}

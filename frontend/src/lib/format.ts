@@ -14,7 +14,7 @@ export function domainOf(entityId: string): string {
 /** Libellés français des domaines les plus courants ; les autres restent bruts. */
 const DOMAINS: Record<string, string> = {
 	alarm_control_panel: 'Alarme',
-	automation: 'Automatisme',
+	automation: 'Automatisation',
 	binary_sensor: 'Capteur binaire',
 	button: 'Bouton',
 	calendar: 'Calendrier',

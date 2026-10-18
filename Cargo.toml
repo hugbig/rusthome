@@ -21,3 +21,6 @@ missing_errors_doc = "allow"
 missing_panics_doc = "allow"
 # Les setters renvoient l’état produit à titre informatif : l’ignorer est normal
 must_use_candidate = "allow"
+
+[profile.dev]
+debug = "line-tables-only"

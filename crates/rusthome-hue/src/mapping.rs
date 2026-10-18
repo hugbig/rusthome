@@ -7,6 +7,8 @@ use std::collections::HashMap;
 
 use serde_json::{Map, Value, json};
 
+use crate::color;
+
 /// Resources indexed by id, kept up to date by the event stream.
 #[derive(Debug, Default, Clone)]
 pub struct Resources {
@@ -180,31 +182,85 @@ fn on_off(r: &Value) -> String {
     .to_owned()
 }
 
-/// HA-compatible light attributes (brightness 0-255, color temp in mireds/kelvin, xy).
+/// HA-compatible light attributes: brightness 0-255, color modes, color
+/// (xy, hs, rgb) and color temperature (mireds and kelvin) with its range.
 fn light_attributes(r: &Value, attrs: &mut Map<String, Value>) {
     let on = r["on"]["on"].as_bool() == Some(true);
+    let has_color = r["color"].is_object();
+    let has_ct = r["color_temperature"].is_object();
+    let has_dim = r["dimming"].is_object();
+
+    let mut modes = Vec::new();
+    if has_ct {
+        modes.push("color_temp");
+    }
+    if has_color {
+        modes.push("xy");
+    }
+    if modes.is_empty() {
+        modes.push(if has_dim { "brightness" } else { "onoff" });
+    }
+    attrs.insert("supported_color_modes".into(), json!(modes));
+
     if let Some(pct) = r["dimming"]["brightness"].as_f64() {
-        let b = if on {
-            Some((pct / 100.0 * 255.0).round())
-        } else {
-            None
-        };
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // 0..=255
+        let b = on.then(|| (pct.clamp(0.0, 100.0) / 100.0 * 255.0).round() as u64);
         attrs.insert("brightness".into(), json!(b));
     }
-    if let Some(m) = r["color_temperature"]["mirek"].as_u64() {
-        if on && r["color_temperature"]["mirek_valid"] == true {
-            attrs.insert("color_temp".into(), json!(m));
-            attrs.insert("color_temp_kelvin".into(), json!(1_000_000 / m.max(1)));
-        }
+    if has_ct {
         let schema = &r["color_temperature"]["mirek_schema"];
-        attrs.insert("min_mireds".into(), schema["mirek_minimum"].clone());
-        attrs.insert("max_mireds".into(), schema["mirek_maximum"].clone());
-    }
-    if on && r["color"]["xy"].is_object() {
-        attrs.insert(
-            "xy_color".into(),
-            json!([r["color"]["xy"]["x"], r["color"]["xy"]["y"]]),
+        let (min_m, max_m) = (
+            schema["mirek_minimum"].as_u64().unwrap_or(153),
+            schema["mirek_maximum"].as_u64().unwrap_or(500),
         );
+        attrs.insert("min_mireds".into(), json!(min_m));
+        attrs.insert("max_mireds".into(), json!(max_m));
+        attrs.insert(
+            "min_color_temp_kelvin".into(),
+            json!(1_000_000 / max_m.max(1)),
+        );
+        attrs.insert(
+            "max_color_temp_kelvin".into(),
+            json!(1_000_000 / min_m.max(1)),
+        );
+    }
+    if !on {
+        attrs.insert("color_mode".into(), Value::Null);
+        return;
+    }
+    // Hue reports a valid mirek only while the light is in white mode.
+    let ct_mode = has_ct
+        && r["color_temperature"]["mirek_valid"] == true
+        && r["color_temperature"]["mirek"].is_u64();
+    let rgb = if ct_mode {
+        let m = r["color_temperature"]["mirek"]
+            .as_u64()
+            .unwrap_or(370)
+            .max(1);
+        attrs.insert("color_temp".into(), json!(m));
+        attrs.insert("color_temp_kelvin".into(), json!(1_000_000 / m));
+        #[allow(clippy::cast_precision_loss)] // mireds are small integers
+        let k = 1_000_000.0 / m as f64;
+        attrs.insert("color_mode".into(), json!("color_temp"));
+        Some(color::kelvin_to_rgb(k))
+    } else if let (Some(x), Some(y)) = (
+        r["color"]["xy"]["x"].as_f64(),
+        r["color"]["xy"]["y"].as_f64(),
+    ) {
+        attrs.insert("xy_color".into(), json!([x, y]));
+        attrs.insert("color_mode".into(), json!("xy"));
+        Some(color::xy_to_rgb(x, y))
+    } else {
+        attrs.insert(
+            "color_mode".into(),
+            json!(if has_dim { "brightness" } else { "onoff" }),
+        );
+        None
+    };
+    if let Some(rgb) = rgb {
+        let (h, s) = color::rgb_to_hs(rgb);
+        attrs.insert("rgb_color".into(), json!(rgb));
+        attrs.insert("hs_color".into(), json!([h, s]));
     }
 }
 
@@ -244,8 +300,25 @@ pub fn light_command(service: &str, data: &Value, currently_on: bool) -> Result<
     }
     if let Some(xy) = data["xy_color"].as_array().filter(|a| a.len() == 2) {
         body["color"] = json!({ "xy": { "x": xy[0], "y": xy[1] } });
+    } else if let Some(rgb) = rgb_of(data) {
+        let (x, y) = color::rgb_to_xy(rgb);
+        body["color"] = json!({ "xy": { "x": x, "y": y } });
     }
     Ok(body)
+}
+
+/// `rgb_color: [r, g, b]` or `hs_color: [h, s]` of a service call.
+fn rgb_of(data: &Value) -> Option<[u8; 3]> {
+    if let Some(a) = data["rgb_color"].as_array().filter(|a| a.len() == 3) {
+        let c = |i: usize| {
+            #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)] // clamped
+            let v = a[i].as_f64().unwrap_or(0.0).clamp(0.0, 255.0) as u8;
+            v
+        };
+        return Some([c(0), c(1), c(2)]);
+    }
+    let hs = data["hs_color"].as_array().filter(|a| a.len() == 2)?;
+    Some(color::hs_to_rgb(hs[0].as_f64()?, hs[1].as_f64()?))
 }
 
 #[cfg(test)]
@@ -276,11 +349,37 @@ mod tests {
         let go = by_id(&es, "376d4fa0-4d3f-4cd0-8b5b-ab25fdc443bc");
         assert_eq!((go.domain, go.name.as_str()), ("light", "Hue go Bureau"));
         assert_eq!(go.state, "on");
-        assert_eq!(go.attributes["brightness"], 204.0); // 79.84 % of 255
+        assert_eq!(go.attributes["brightness"], 204); // 79.84 % of 255, an integer as in HA
         assert_eq!(go.attributes["color_temp"], 284);
+        assert_eq!(go.attributes["color_mode"], "color_temp");
+        assert_eq!(
+            go.attributes["supported_color_modes"],
+            json!(["color_temp", "xy"])
+        );
+        assert_eq!(go.attributes["color_temp_kelvin"], 3521);
+        assert_eq!(go.attributes["min_color_temp_kelvin"], 2000);
+        assert!(
+            go.attributes["rgb_color"].is_array(),
+            "white shown as its color"
+        );
         let scene = by_id(&es, "07cd7625-0bb7-4ed0-8df0-198027734719");
         assert_eq!(scene.name, "salon Printemps Floral");
         assert_eq!(scene.attributes["friendly_name"], "salon Printemps Floral");
+    }
+
+    #[test]
+    fn color_mode_follows_the_bridge() {
+        let mut res = real();
+        let id = "376d4fa0-4d3f-4cd0-8b5b-ab25fdc443bc";
+        res.merge(
+            &json!({"id": id, "color": {"xy": {"x": 0.6915, "y": 0.3083}},
+                          "color_temperature": {"mirek": null, "mirek_valid": false}}),
+        );
+        let e = entity(&res, &res.by_id[id].clone()).unwrap();
+        assert_eq!(e.attributes["color_mode"], "xy");
+        let rgb = e.attributes["rgb_color"].as_array().unwrap();
+        assert_eq!(rgb[0], 255, "red light shows red");
+        assert!(!e.attributes.contains_key("color_temp_kelvin"));
     }
 
     #[test]
@@ -320,6 +419,10 @@ mod tests {
         assert_eq!(on["dimming"]["brightness"], 100.0);
         assert_eq!(on["color_temperature"]["mirek"], 370);
         assert_eq!(on["dynamics"]["duration"], 1500);
+        let red = light_command("turn_on", &json!({"hs_color": [0, 100]}), false).unwrap();
+        assert!(red["color"]["xy"]["x"].as_f64().unwrap() > 0.6);
+        let blue = light_command("turn_on", &json!({"rgb_color": [0, 0, 255]}), false).unwrap();
+        assert!(blue["color"]["xy"]["y"].as_f64().unwrap() < 0.1);
         let pct = light_command("turn_on", &json!({"brightness_pct": 150}), false).unwrap();
         assert_eq!(pct["dimming"]["brightness"], 100.0, "clamped");
         assert!(light_command("blink", &json!({}), false).is_err());

@@ -89,6 +89,8 @@ pub struct Config {
     pub fixtures: Option<PathBuf>,
     /// HA blueprints copied here are expanded when automations are imported.
     pub blueprints_dir: PathBuf,
+    /// Dashboard imposed on `display` accounts (`RUSTHOME_DISPLAY_DASHBOARD`).
+    pub display_dashboard: Option<String>,
     pub mqtt: Option<MqttSettings>,
     pub portainer: Option<PortainerSettings>,
     pub hue: Option<HueSettings>,
@@ -107,6 +109,39 @@ pub enum ConfigError {
 }
 
 impl Config {
+    /// Summary for Paramètres > Système. Only hosts and flags: never a
+    /// token, password or URL user info.
+    pub fn system_info(&self) -> serde_json::Value {
+        let host = |u: &Url| {
+            u.host_str().map(|h| {
+                u.port()
+                    .map_or_else(|| h.to_owned(), |p| format!("{h}:{p}"))
+            })
+        };
+        serde_json::json!({
+            "env": if self.env == Env::Production { "production" } else { "development" },
+            "auth": match &self.auth {
+                AuthConfig::Dev => "dev",
+                AuthConfig::Disabled => "disabled",
+                AuthConfig::Oidc(_) => "oidc",
+            },
+            "timezone": self.tz.name(),
+            "retention_days": self.retention_days,
+            "ha_mirror": self.ha.as_ref().and_then(|(u, _)| host(u)),
+            "mqtt": self.mqtt.as_ref().map(|m| serde_json::json!({
+                "broker": host(&m.url),
+                "read_only": m.read_only,
+                "z2m_base_topic": m.z2m_base_topic,
+                "frigate": m.frigate_url.as_ref().and_then(host),
+            })),
+            "hue": self.hue.as_ref().map(|h| serde_json::json!({
+                "bridge": host(&h.url),
+                "read_only": h.read_only,
+            })),
+            "portainer": self.portainer.as_ref().and_then(|p| host(&p.url)),
+        })
+    }
+
     /// Pure: takes the variables as a map so it is unit-testable.
     pub fn from_vars(vars: &HashMap<String, String>) -> Result<Self, ConfigError> {
         let get = |k: &str| vars.get(k).map(String::as_str).filter(|v| !v.is_empty());
@@ -193,6 +228,16 @@ impl Config {
             retention_days,
             ha,
             fixtures: get("RUSTHOME_FIXTURES").map(PathBuf::from),
+            display_dashboard: match get("RUSTHOME_DISPLAY_DASHBOARD") {
+                Some(p) if rusthome_dashboard::valid_url_path(p) => Some(p.to_owned()),
+                Some(p) => {
+                    return Err(ConfigError::Invalid(
+                        "RUSTHOME_DISPLAY_DASHBOARD",
+                        p.to_owned(),
+                    ));
+                }
+                None => None,
+            },
             blueprints_dir: PathBuf::from(
                 get("RUSTHOME_BLUEPRINTS_DIR").unwrap_or("var/blueprints"),
             ),
@@ -308,6 +353,42 @@ mod tests {
         assert_eq!(c.auth, AuthConfig::Dev);
         assert_eq!(c.bind.to_string(), "127.0.0.1:8124");
         assert!(c.ha.is_none());
+    }
+
+    #[test]
+    fn display_dashboard_must_be_a_dashboard_path() {
+        let c = Config::from_vars(&vars(&[(
+            "RUSTHOME_DISPLAY_DASHBOARD",
+            "dashboard-nspanel",
+        )]))
+        .unwrap();
+        assert_eq!(c.display_dashboard.as_deref(), Some("dashboard-nspanel"));
+        assert!(Config::from_vars(&vars(&[("RUSTHOME_DISPLAY_DASHBOARD", "Mon Panel")])).is_err());
+        assert!(
+            Config::from_vars(&vars(&[]))
+                .unwrap()
+                .display_dashboard
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn system_info_has_no_secret() {
+        let c = Config::from_vars(&vars(&[
+            ("HA_URL", "http://192.168.1.35:8123"),
+            ("HA_TOKEN", "very-secret-token"),
+            ("RUSTHOME_MQTT_URL", "mqtt://user:pw@192.168.1.35:1883"),
+            ("RUSTHOME_MQTT_PASSWORD", "mqtt-secret"),
+        ]))
+        .unwrap();
+        let info = c.system_info();
+        assert_eq!(info["ha_mirror"], "192.168.1.35:8123");
+        assert_eq!(info["mqtt"]["broker"], "192.168.1.35:1883");
+        assert_eq!(info["mqtt"]["read_only"], true);
+        let text = info.to_string();
+        for secret in ["very-secret-token", "mqtt-secret", "user:pw", "pw@"] {
+            assert!(!text.contains(secret), "{secret} leaked");
+        }
     }
 
     #[test]
