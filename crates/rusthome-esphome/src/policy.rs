@@ -145,6 +145,14 @@ pub fn valid_configuration(configuration: &str) -> bool {
 
 /// `esphome.name` of a project's YAML, `${substitutions}` resolved. Custom
 /// tags (`!secret`, `!lambda`…) are kept as tagged values and ignored.
+///
+/// Fails closed (`None`, so the write is refused) on anything this reader
+/// does not resolve exactly as ESPHome would: `$var` short form, nested
+/// substitutions, a value from `!include` or from a package, merge keys. The
+/// name of the main file wins over packages and merges in ESPHome, so a
+/// name read here is the compiled one. A valid name is lowercase letters,
+/// digits, `-` and `_`, which also rules out case or spacing variants of a
+/// locked name.
 #[must_use]
 pub fn yaml_device_name(content: &str) -> Option<String> {
     let doc: serde_yaml::Value = serde_yaml::from_str(content).ok()?;
@@ -156,12 +164,21 @@ pub fn yaml_device_name(content: &str) -> Option<String> {
         out.push_str(&rest[..start]);
         let after = &rest[start + 2..];
         let end = after.find('}')?;
-        let key = &after[..end];
-        out.push_str(subs?.get(key)?.as_str()?);
+        let value = subs?.get(&after[..end])?.as_str()?;
+        if value.contains('$') {
+            return None;
+        }
+        out.push_str(value);
         rest = &after[end + 1..];
     }
     out.push_str(rest);
-    Some(out.trim().to_owned()).filter(|n| !n.is_empty())
+    let name = out.trim();
+    let valid = !name.is_empty()
+        && name.len() <= 64
+        && name
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '-' | '_'));
+    valid.then(|| name.to_owned())
 }
 
 /// A secret key name (`wifi_password`…).
@@ -239,6 +256,31 @@ mod tests {
         assert_eq!(yaml_device_name("esphome:\n  name: ${missing}\n"), None);
         assert_eq!(yaml_device_name("wifi: {}"), None);
         assert_eq!(yaml_device_name(": not yaml ["), None);
+        // Remote packages are fine: the main file's name wins.
+        let proxy = "substitutions:\n  name: atom-proxy\npackages:\n  p: github://esphome/firmware/x.yaml@main\nesphome:\n  name: ${name}\n";
+        assert_eq!(yaml_device_name(proxy).as_deref(), Some("atom-proxy"));
+    }
+
+    #[test]
+    fn device_names_that_cannot_be_resolved_exactly_are_refused() {
+        for y in [
+            // `$var` short form
+            "substitutions:\n  n: lecteur-alarme\nesphome:\n  name: $n\n",
+            // nested substitution
+            "substitutions:\n  a: lecteur-alarme\n  n: ${a}\nesphome:\n  name: ${n}\n",
+            // value from a file or a package
+            "substitutions:\n  n: !include n.yaml\nesphome:\n  name: ${n}\n",
+            "substitutions: !include subs.yaml\nesphome:\n  name: ${n}\n",
+            "packages:\n  p: !include alarm.yaml\nesphome:\n  name: ${n}\n",
+            "esphome: !include base.yaml\n",
+            "esphome:\n  <<: !include base.yaml\n",
+            "esphome:\n  name: !include name.yaml\n",
+            // case and spacing variants
+            "esphome:\n  name: Lecteur-Alarme\n",
+            "esphome:\n  name: lecteur alarme\n",
+        ] {
+            assert_eq!(yaml_device_name(y), None, "{y}");
+        }
     }
 
     #[test]
