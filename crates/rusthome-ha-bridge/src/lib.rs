@@ -16,7 +16,7 @@ use rusthome_import::{ImportResult, import_registries};
 use rusthome_model::{State, StateChanged};
 use url::Url;
 
-pub use client::{BridgeError, BridgeEvent, Connection};
+pub use client::{BridgeError, BridgeEvent, Connection, HaDashboard};
 pub use command::Command;
 
 #[derive(Debug, Clone)]
@@ -24,6 +24,70 @@ pub struct BridgeConfig {
     /// Base URL of HA, e.g. `http://192.168.1.35:8123`.
     pub url: Url,
     pub token: String,
+}
+
+/// Reads every Lovelace dashboard of HA over a short-lived connection.
+pub async fn fetch_dashboards(cfg: &BridgeConfig) -> Result<Vec<HaDashboard>, BridgeError> {
+    let mut conn = Connection::connect(&cfg.url, &cfg.token).await?;
+    conn.fetch_dashboards().await
+}
+
+/// Items of a HA to-do list over a short-lived connection.
+pub async fn fetch_todo_items(
+    cfg: &BridgeConfig,
+    entity_id: &str,
+) -> Result<Vec<serde_json::Value>, BridgeError> {
+    let mut conn = Connection::connect(&cfg.url, &cfg.token).await?;
+    conn.todo_items(entity_id).await
+}
+
+/// Energy panel settings of HA (short-lived connection, read-only).
+pub async fn fetch_energy_prefs(cfg: &BridgeConfig) -> Result<serde_json::Value, BridgeError> {
+    let mut conn = Connection::connect(&cfg.url, &cfg.token).await?;
+    conn.energy_prefs().await
+}
+
+/// Long-term statistics of HA (short-lived connection, read-only).
+pub async fn fetch_statistics(
+    cfg: &BridgeConfig,
+    ids: &[String],
+    start: &str,
+    end: &str,
+    period: &str,
+) -> Result<serde_json::Value, BridgeError> {
+    let mut conn = Connection::connect(&cfg.url, &cfg.token).await?;
+    conn.statistics(ids, start, end, period, &["change", "sum"])
+        .await
+}
+
+/// Weather forecast of a HA weather entity (short-lived subscription).
+pub async fn fetch_forecast(
+    cfg: &BridgeConfig,
+    entity_id: &str,
+    kind: &str,
+) -> Result<serde_json::Value, BridgeError> {
+    let mut conn = Connection::connect(&cfg.url, &cfg.token).await?;
+    tokio::time::timeout(
+        Duration::from_secs(10),
+        conn.weather_forecast(entity_id, kind),
+    )
+    .await
+    .map_err(|_| BridgeError::Protocol("forecast: no answer within 10 s".into()))?
+}
+
+/// Browses a HA media source (short-lived connection, read-only).
+pub async fn browse_media(
+    cfg: &BridgeConfig,
+    id: Option<&str>,
+) -> Result<serde_json::Value, BridgeError> {
+    let mut conn = Connection::connect(&cfg.url, &cfg.token).await?;
+    conn.media_browse(id).await
+}
+
+/// Resolves a HA media to its signed URL (short-lived connection, read-only).
+pub async fn resolve_media(cfg: &BridgeConfig, id: &str) -> Result<serde_json::Value, BridgeError> {
+    let mut conn = Connection::connect(&cfg.url, &cfg.token).await?;
+    conn.media_resolve(id).await
 }
 
 /// Summary of one synchronisation, logged and exposed to the UI.
@@ -104,10 +168,17 @@ pub fn apply(hub: &Hub, imported: &ImportResult, states: Vec<State>) -> SyncRepo
     }
     let mut applied = 0;
     for s in states {
-        if !is_skipped(imported, s.entity_id.as_str()) && !natively_owned(hub, &s.entity_id) {
-            hub.states.set_external(s);
-            applied += 1;
+        if is_skipped(imported, s.entity_id.as_str()) {
+            continue;
         }
+        // A natively owned entity keeps its own state; HA only seeds it until
+        // the native integration reports (a Zigbee sensor may stay silent for
+        // an hour after a restart).
+        if natively_owned(hub, &s.entity_id) && hub.states.get(&s.entity_id).is_some() {
+            continue;
+        }
+        hub.states.set_external(s);
+        applied += 1;
     }
     SyncReport {
         entities: imported.entities.len(),

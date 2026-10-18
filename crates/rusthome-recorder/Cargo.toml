@@ -11,7 +11,7 @@ workspace = true
 chrono = "0.4.45"
 rusthome-core = { version = "0.1.0", path = "../rusthome-core" }
 rusthome-model = { version = "0.1.0", path = "../rusthome-model" }
-serde = "1.0.229"
+serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 sqlx = { version = "0.9.0", default-features = false, features = ["runtime-tokio", "sqlite", "macros", "migrate", "chrono", "json"] }
 thiserror = "2.0.21"

@@ -22,6 +22,15 @@ pub enum RecorderError {
     Json(#[from] serde_json::Error),
 }
 
+/// One line of the logbook.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+pub struct LogbookEntry {
+    pub entity_id: String,
+    pub state: String,
+    pub previous: String,
+    pub when: DateTime<Utc>,
+}
+
 #[derive(Clone)]
 pub struct Recorder {
     pool: SqlitePool,
@@ -195,6 +204,76 @@ impl Recorder {
             .collect()
     }
 
+    // ---------- settings ----------
+
+    pub async fn setting(&self, key: &str) -> Result<Option<String>, RecorderError> {
+        let row = sqlx::query("SELECT value FROM settings WHERE key = ?")
+            .bind(key)
+            .fetch_optional(&self.pool)
+            .await?;
+        Ok(row.map(|r| r.get::<String, _>("value")))
+    }
+
+    /// Sets a setting, or removes it with `None`.
+    pub async fn set_setting(&self, key: &str, value: Option<&str>) -> Result<(), RecorderError> {
+        match value {
+            Some(v) => {
+                sqlx::query(
+                    "INSERT INTO settings (key, value) VALUES (?, ?)
+                     ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                )
+                .bind(key)
+                .bind(v)
+                .execute(&self.pool)
+                .await?;
+            }
+            None => {
+                sqlx::query("DELETE FROM settings WHERE key = ?")
+                    .bind(key)
+                    .execute(&self.pool)
+                    .await?;
+            }
+        }
+        Ok(())
+    }
+
+    // ---------- dashboards ----------
+
+    pub async fn save_dashboard(
+        &self,
+        url_path: &str,
+        doc: &serde_json::Value,
+        now: DateTime<Utc>,
+    ) -> Result<(), RecorderError> {
+        sqlx::query(
+            "INSERT INTO dashboards (url_path, data, updated_at) VALUES (?, ?, ?)
+             ON CONFLICT(url_path) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at",
+        )
+        .bind(url_path)
+        .bind(serde_json::to_string(doc)?)
+        .bind(now.to_rfc3339())
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    pub async fn delete_dashboard(&self, url_path: &str) -> Result<bool, RecorderError> {
+        let res = sqlx::query("DELETE FROM dashboards WHERE url_path = ?")
+            .bind(url_path)
+            .execute(&self.pool)
+            .await?;
+        Ok(res.rows_affected() > 0)
+    }
+
+    pub async fn load_dashboards(&self) -> Result<Vec<serde_json::Value>, RecorderError> {
+        let rows = sqlx::query("SELECT data FROM dashboards ORDER BY url_path")
+            .fetch_all(&self.pool)
+            .await?;
+        rows.iter()
+            .map(|r| Ok(serde_json::from_str(r.get::<&str, _>("data"))?))
+            .collect()
+    }
+
     // ---------- history ----------
 
     pub async fn record_state(&self, s: &State) -> Result<(), RecorderError> {
@@ -235,6 +314,59 @@ impl Recorder {
                 })
             })
             .collect()
+    }
+
+    /// Logbook: state changes since `since`, newest first. Numeric sensors
+    /// (with a unit) are left out, as in HA, and so are the first rows of
+    /// each entity in the window (no previous state to compare with).
+    pub async fn logbook(
+        &self,
+        since: DateTime<Utc>,
+        entity_id: Option<&EntityId>,
+        limit: u32,
+    ) -> Result<Vec<LogbookEntry>, RecorderError> {
+        let rows = sqlx::query(
+            "SELECT entity_id, state, prev, last_changed FROM (
+                 SELECT entity_id, state, last_changed, last_updated, id,
+                        json_extract(attributes, '$.unit_of_measurement') AS unit,
+                        LAG(state) OVER (PARTITION BY entity_id ORDER BY last_updated, id) AS prev
+                 FROM states
+                 WHERE last_updated >= ? AND (? IS NULL OR entity_id = ?)
+             )
+             WHERE prev IS NOT NULL AND prev != state AND unit IS NULL
+             ORDER BY last_updated DESC, id DESC
+             LIMIT ?",
+        )
+        .bind(since.to_rfc3339())
+        .bind(entity_id.map(EntityId::as_str))
+        .bind(entity_id.map(EntityId::as_str))
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await?;
+        Ok(rows
+            .iter()
+            .map(|r| LogbookEntry {
+                entity_id: r.get("entity_id"),
+                state: r.get("state"),
+                previous: r.get("prev"),
+                when: parse_ts(r.get("last_changed")),
+            })
+            .collect())
+    }
+
+    /// Moves the history of a renamed entity to its new id. Returns the
+    /// number of rows moved.
+    pub async fn rename_history(
+        &self,
+        from: &EntityId,
+        to: &EntityId,
+    ) -> Result<u64, RecorderError> {
+        let res = sqlx::query("UPDATE states SET entity_id = ? WHERE entity_id = ?")
+            .bind(to.as_str())
+            .bind(from.as_str())
+            .execute(&self.pool)
+            .await?;
+        Ok(res.rows_affected())
     }
 
     /// Deletes history older than `keep`. Returns the number of rows removed.
@@ -389,6 +521,44 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn settings_round_trip() {
+        let rec = mem().await;
+        assert_eq!(rec.setting("default_dashboard").await.unwrap(), None);
+        rec.set_setting("default_dashboard", Some("apercu-2"))
+            .await
+            .unwrap();
+        rec.set_setting("default_dashboard", Some("apercu-3"))
+            .await
+            .unwrap();
+        assert_eq!(
+            rec.setting("default_dashboard").await.unwrap().as_deref(),
+            Some("apercu-3")
+        );
+        rec.set_setting("default_dashboard", None).await.unwrap();
+        assert_eq!(rec.setting("default_dashboard").await.unwrap(), None);
+    }
+
+    #[tokio::test]
+    async fn dashboards_round_trip() {
+        let rec = mem().await;
+        let now = Utc.with_ymd_and_hms(2026, 10, 17, 12, 0, 0).unwrap();
+        for title in ["A", "B"] {
+            rec.save_dashboard(
+                "securite",
+                &serde_json::json!({"url_path": "securite", "title": title}),
+                now,
+            )
+            .await
+            .unwrap();
+        }
+        let all = rec.load_dashboards().await.unwrap();
+        assert_eq!(all.len(), 1);
+        assert_eq!(all[0]["title"], "B");
+        assert!(rec.delete_dashboard("securite").await.unwrap());
+        assert!(!rec.delete_dashboard("securite").await.unwrap());
+    }
+
+    #[tokio::test]
     async fn automations_round_trip() {
         let rec = mem().await;
         let now = Utc.with_ymd_and_hms(2026, 10, 17, 12, 0, 0).unwrap();
@@ -434,6 +604,65 @@ mod tests {
             fresh.area("salon").unwrap().floor_id.as_deref(),
             Some("rdc")
         );
+    }
+
+    #[tokio::test]
+    async fn logbook_keeps_real_changes_only() {
+        let rec = mem().await;
+        let t0 = Utc.with_ymd_and_hms(2026, 10, 17, 8, 0, 0).unwrap();
+        let m = |n| t0 + Duration::minutes(n);
+        for (e, v, at) in [
+            ("light.salon", "off", m(0)),
+            ("light.salon", "off", m(1)), // attribute update only
+            ("light.salon", "on", m(2)),
+            ("binary_sensor.porte", "off", m(0)),
+            ("binary_sensor.porte", "on", m(3)),
+        ] {
+            rec.record_state(&st(e, v, at)).await.unwrap();
+        }
+        let mut temp = st("sensor.temp", "20", m(0));
+        temp.attributes
+            .insert("unit_of_measurement".into(), "°C".into());
+        rec.record_state(&temp).await.unwrap();
+        temp.state = "21".into();
+        temp.last_updated = m(4);
+        rec.record_state(&temp).await.unwrap();
+
+        let all = rec.logbook(t0, None, 50).await.unwrap();
+        let seen: Vec<(&str, &str, &str)> = all
+            .iter()
+            .map(|e| (e.entity_id.as_str(), e.previous.as_str(), e.state.as_str()))
+            .collect();
+        assert_eq!(
+            seen,
+            [
+                ("binary_sensor.porte", "off", "on"),
+                ("light.salon", "off", "on")
+            ],
+            "newest first, no numeric sensor, no repeat"
+        );
+        let salon = EntityId::parse("light.salon").unwrap();
+        assert_eq!(rec.logbook(t0, Some(&salon), 50).await.unwrap().len(), 1);
+        assert_eq!(rec.logbook(t0, None, 1).await.unwrap().len(), 1);
+    }
+
+    #[tokio::test]
+    async fn history_follows_a_renamed_entity() {
+        let rec = mem().await;
+        let t0 = Utc.with_ymd_and_hms(2026, 10, 18, 8, 0, 0).unwrap();
+        rec.record_state(&st("sensor.salon_t", "20", t0))
+            .await
+            .unwrap();
+        rec.record_state(&st("sensor.salon_t", "21", t0 + Duration::minutes(5)))
+            .await
+            .unwrap();
+        let (old, new) = (
+            EntityId::parse("sensor.salon_t").unwrap(),
+            EntityId::parse("sensor.sejour_t").unwrap(),
+        );
+        assert_eq!(rec.rename_history(&old, &new).await.unwrap(), 2);
+        assert_eq!(rec.history(&new, t0).await.unwrap().len(), 2);
+        assert_eq!(rec.history(&old, t0).await.unwrap().len(), 0);
     }
 
     #[tokio::test]

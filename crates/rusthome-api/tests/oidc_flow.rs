@@ -75,6 +75,11 @@ fn app() -> Router {
             recorder: None,
             auth: AuthMode::Oidc(Arc::new(oidc)),
             automations: None,
+            dashboards: None,
+            system: serde_json::Value::Null,
+            display_dashboard: None,
+            zigbee: None,
+            frigate: None,
         },
         None,
     )

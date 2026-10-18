@@ -5,6 +5,7 @@
 //! services that publish on `zigbee2mqtt/<name>/set`. With a read-only MQTT
 //! client every command is refused, so nothing reaches a real device.
 
+pub mod bridge;
 pub mod mapping;
 
 use std::collections::HashMap;
@@ -29,6 +30,8 @@ pub struct Z2m {
     base: String,
     publisher: Arc<dyn Publisher>,
     bindings: RwLock<HashMap<EntityId, Binding>>,
+    /// Network management (pairing, renaming, OTA, groups, bindings).
+    bridge: bridge::Bridge,
 }
 
 /// Summary of a `bridge/devices` synchronisation.
@@ -48,6 +51,7 @@ impl Z2m {
             base: base_topic.trim_end_matches('/').to_owned(),
             publisher,
             bindings: RwLock::default(),
+            bridge: bridge::Bridge::default(),
         })
     }
 
@@ -308,12 +312,47 @@ impl Z2m {
         }
     }
 
+    /// State of the Zigbee network for the UI (`bridge/info`, devices,
+    /// groups, recent events, last payload of each device).
+    pub fn bridge_snapshot(&self) -> Value {
+        self.bridge.snapshot()
+    }
+
+    /// Friendly name of a device from its IEEE address.
+    pub fn friendly_name(&self, ieee: &str) -> Option<String> {
+        self.bridge.friendly_name(ieee)
+    }
+
+    /// Sends a bridge request (`permit_join`, `device/rename`…) and waits for
+    /// its answer. Refused before sending when MQTT is read-only.
+    pub async fn bridge_request(
+        &self,
+        kind: &str,
+        payload: Value,
+    ) -> Result<Value, bridge::BridgeError> {
+        let (sub, body, rx) = self.bridge.prepare(kind, payload)?;
+        let topic = format!("{}/bridge/{sub}", self.base);
+        if let Err(e) = self.publisher.publish(topic, body.clone()).await {
+            self.bridge.cancel(&body);
+            return Err(bridge::publish_error(e));
+        }
+        bridge::answer(rx, std::time::Duration::from_secs(30)).await
+    }
+
     /// Subscribes and processes messages forever.
     pub async fn run(self: Arc<Self>, mqtt: Mqtt) {
         let mut rx = mqtt.messages();
         let devices_topic = format!("{}/bridge/devices", self.base);
         let device_filter = format!("{}/+", self.base);
-        for filter in [&devices_topic, &device_filter] {
+        let bridge_prefix = format!("{}/bridge/", self.base);
+        let bridge_topics: Vec<String> = ["info", "groups", "event", "response/#"]
+            .iter()
+            .map(|t| format!("{bridge_prefix}{t}"))
+            .collect();
+        for filter in [&devices_topic, &device_filter]
+            .into_iter()
+            .chain(&bridge_topics)
+        {
             if let Err(e) = mqtt.subscribe(filter).await {
                 tracing::error!(error = %e, filter, "Zigbee2MQTT: subscribe failed");
             }
@@ -328,6 +367,10 @@ impl Z2m {
                 Err(tokio::sync::broadcast::error::RecvError::Closed) => return,
             };
             if msg.topic == devices_topic {
+                if let Ok(raw) = serde_json::from_slice::<Value>(&msg.payload) {
+                    self.bridge
+                        .handle("devices", &raw, self.hub.clock.now().timestamp_millis());
+                }
                 match serde_json::from_slice::<Vec<Z2mDevice>>(&msg.payload) {
                     Ok(devices) => {
                         let report = self.handle_devices(&devices);
@@ -335,11 +378,17 @@ impl Z2m {
                     }
                     Err(e) => tracing::warn!(error = %e, "Zigbee2MQTT: unreadable bridge/devices"),
                 }
+            } else if let Some(sub) = msg.topic.strip_prefix(&bridge_prefix) {
+                if let Ok(payload) = serde_json::from_slice::<Value>(&msg.payload) {
+                    self.bridge
+                        .handle(sub, &payload, self.hub.clock.now().timestamp_millis());
+                }
             } else if topic_matches(&device_filter, &msg.topic)
                 && !msg.topic.starts_with(&format!("{}/bridge", self.base))
             {
                 let name = &msg.topic[self.base.len() + 1..];
                 if let Ok(payload) = serde_json::from_slice::<Value>(&msg.payload) {
+                    self.bridge.record_payload(name, &payload);
                     self.handle_state(name, &payload);
                 }
             }
@@ -381,6 +430,48 @@ mod tests {
                 Ok(())
             })
         }
+    }
+
+    #[tokio::test]
+    async fn bridge_requests_are_refused_when_read_only() {
+        let hub = Hub::new(Arc::new(SystemClock));
+        let ro = Arc::new(Recorder {
+            read_only: true,
+            ..Recorder::default()
+        });
+        let z = Z2m::new(hub, "zigbee2mqtt", ro.clone());
+        assert_eq!(
+            z.bridge_request("permit_join", json!({ "time": 60 })).await,
+            Err(bridge::BridgeError::ReadOnly)
+        );
+        assert!(ro.sent.lock().unwrap().is_empty(), "nothing sent");
+    }
+
+    #[tokio::test]
+    async fn bridge_requests_go_to_the_bridge_topic() {
+        let hub = Hub::new(Arc::new(SystemClock));
+        let rec = Arc::new(Recorder::default());
+        let z = Z2m::new(hub, "zigbee2mqtt", rec.clone());
+        let z2 = Arc::clone(&z);
+        let task = tokio::spawn(async move {
+            z2.bridge_request("device/rename", json!({ "from": "a", "to": "b" }))
+                .await
+        });
+        // answer the request as Zigbee2MQTT would
+        let (topic, payload) = loop {
+            if let Some(m) = rec.sent.lock().unwrap().first().cloned() {
+                break m;
+            }
+            tokio::task::yield_now().await;
+        };
+        assert_eq!(topic, "zigbee2mqtt/bridge/request/device/rename");
+        let tx = serde_json::from_str::<Value>(&payload).unwrap()["transaction"].clone();
+        z.bridge.handle(
+            "response/device/rename",
+            &json!({ "status": "ok", "data": { "from": "a", "to": "b" }, "transaction": tx }),
+            0,
+        );
+        assert_eq!(task.await.unwrap().unwrap()["to"], "b");
     }
 
     fn devices() -> Vec<Z2mDevice> {

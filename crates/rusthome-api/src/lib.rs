@@ -5,8 +5,12 @@
 
 mod auth;
 pub mod automations;
+pub mod dashboards;
+mod media;
 pub mod oidc;
+mod panels;
 mod ws;
+mod zigbee;
 
 use std::path::PathBuf;
 
@@ -32,6 +36,16 @@ pub struct ApiState {
     pub recorder: Option<Recorder>,
     pub auth: AuthMode,
     pub automations: Option<automations::AutomationsCtx>,
+    pub dashboards: Option<dashboards::DashboardsCtx>,
+    /// What the binary reports about itself for Paramètres > Système
+    /// (sources, read-only flags…). No secret goes in there.
+    pub system: serde_json::Value,
+    /// Dashboard imposed on `display` accounts (the wall tablet).
+    pub display_dashboard: Option<String>,
+    /// Zigbee2MQTT management (pairing, renaming, OTA, groups, bindings).
+    pub zigbee: Option<std::sync::Arc<rusthome_z2m::Z2m>>,
+    /// Frigate media (events, clips, recordings) for the media browser.
+    pub frigate: Option<std::sync::Arc<rusthome_frigate::Frigate>>,
 }
 
 /// Builds the router. `static_dir`, when set, serves the built frontend
@@ -43,6 +57,8 @@ pub fn router(state: ApiState, static_dir: Option<PathBuf>) -> Router {
         .route("/states/{entity_id}", get(state_of))
         .route("/registry/{kind}", get(registry))
         .route("/history/{entity_id}", get(history))
+        .route("/logbook", get(logbook))
+        .route("/system", get(system))
         .route("/ws", get(ws::handler))
         .route(
             "/automations",
@@ -71,6 +87,39 @@ pub fn router(state: ApiState, static_dir: Option<PathBuf>) -> Router {
             axum::routing::post(automations::run_now),
         )
         .route("/automations/{id}/traces", get(automations::traces))
+        .route(
+            "/dashboards",
+            get(dashboards::list).post(dashboards::create),
+        )
+        .route(
+            "/settings/default-dashboard",
+            axum::routing::put(dashboards::set_default),
+        )
+        .route(
+            "/dashboards/import-ha",
+            axum::routing::post(dashboards::import_ha),
+        )
+        .route(
+            "/dashboards/{url_path}",
+            get(dashboards::get_one)
+                .put(dashboards::put_one)
+                .delete(dashboards::delete_one),
+        )
+        .route(
+            "/cameras/{entity_id}/snapshot",
+            get(dashboards::camera_snapshot),
+        )
+        .route(
+            "/calendars/{entity_id}/events",
+            get(dashboards::calendar_events),
+        )
+        .route("/todo/{entity_id}/items", get(dashboards::todo_items))
+        .route("/media/{entity_id}/image", get(dashboards::media_image))
+        .route("/weather/{entity_id}/forecast", get(panels::forecast))
+        .route("/energy/prefs", get(panels::energy_prefs))
+        .route("/energy/statistics", get(panels::energy_statistics))
+        .merge(media::routes())
+        .merge(zigbee::routes())
         .route("/services", get(list_services))
         .route(
             "/services/{domain}/{service}",
@@ -144,8 +193,33 @@ async fn health(AxState(s): AxState<ApiState>) -> Json<serde_json::Value> {
     }))
 }
 
-async fn me(axum::Extension(user): axum::Extension<User>) -> Json<User> {
-    Json(user)
+async fn system(AxState(s): AxState<ApiState>) -> Json<serde_json::Value> {
+    Json(json!({
+        "version": env!("CARGO_PKG_VERSION"),
+        "entities": s.hub.states.len(),
+        "recorder": s.recorder.is_some(),
+        "automations": s.automations.is_some(),
+        "dashboards": s.dashboards.is_some(),
+        "sources": s.system,
+    }))
+}
+
+/// Settings key of the default dashboard.
+pub const DEFAULT_DASHBOARD_KEY: &str = "default_dashboard";
+
+/// The current user; `home` is the dashboard a `display` account is held to,
+/// `default_dashboard` the one opened at `/`.
+async fn me(
+    AxState(s): AxState<ApiState>,
+    axum::Extension(user): axum::Extension<User>,
+) -> Json<serde_json::Value> {
+    let home = (user.role == Role::Display)
+        .then(|| s.display_dashboard.clone())
+        .flatten();
+    let default_dashboard = dashboards::default_for(&s, &user);
+    Json(json!({
+        "name": user.name, "role": user.role, "home": home, "default_dashboard": default_dashboard
+    }))
 }
 
 async fn states(AxState(s): AxState<ApiState>) -> Json<serde_json::Value> {
@@ -242,6 +316,31 @@ async fn history(
     Ok(Json(json!(rows)))
 }
 
+#[derive(Deserialize)]
+struct LogbookQuery {
+    hours: Option<i64>,
+    entity_id: Option<String>,
+    limit: Option<u32>,
+}
+
+/// State changes of every entity (or one), newest first.
+async fn logbook(
+    AxState(s): AxState<ApiState>,
+    Query(q): Query<LogbookQuery>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    let rec = s
+        .recorder
+        .as_ref()
+        .ok_or_else(|| ApiError::NotFound("recorder disabled".into()))?;
+    let id = q.entity_id.as_deref().map(parse_id).transpose()?;
+    let since = s.hub.clock.now() - Duration::hours(q.hours.unwrap_or(24).clamp(1, 24 * 30));
+    let rows = rec
+        .logbook(since, id.as_ref(), q.limit.unwrap_or(500).min(5000))
+        .await
+        .map_err(|e| ApiError::Internal(e.to_string()))?;
+    Ok(Json(json!(rows)))
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::Arc;
@@ -254,6 +353,20 @@ mod tests {
     use rusthome_model::{Area, Context};
     use serde_json::{Map, Value};
     use tower::ServiceExt;
+
+    struct FakeCameras;
+
+    impl dashboards::CameraSource for FakeCameras {
+        fn snapshot<'a>(&'a self, entity_id: &'a EntityId) -> dashboards::ImageFuture<'a> {
+            Box::pin(async move {
+                if entity_id.as_str() == "camera.salon" {
+                    Ok(("image/jpeg".to_owned(), vec![0xff, 0xd8]))
+                } else {
+                    Err(format!("no image for {entity_id}"))
+                }
+            })
+        }
+    }
 
     fn app(auth: AuthMode) -> (Router, Hub) {
         let hub = Hub::new(Arc::new(SystemClock));
@@ -285,6 +398,15 @@ mod tests {
                         z2m_base: "zigbee2mqtt".into(),
                         ha: None,
                     }),
+                    dashboards: Some(dashboards::DashboardsCtx {
+                        store: Arc::new(rusthome_dashboard::Store::new()),
+                        ha: None,
+                        cameras: Some(Arc::new(FakeCameras)),
+                    }),
+                    system: serde_json::Value::Null,
+                    display_dashboard: None,
+                    zigbee: None,
+                    frigate: None,
                 },
                 None,
             ),
@@ -332,7 +454,13 @@ mod tests {
     }
 
     async fn post_json(app: Router, uri: &str, body: Value) -> (StatusCode, Value) {
-        let req = Request::post(uri)
+        send_json(app, "POST", uri, body).await
+    }
+
+    async fn send_json(app: Router, method: &str, uri: &str, body: Value) -> (StatusCode, Value) {
+        let req = Request::builder()
+            .method(method)
+            .uri(uri)
             .header("content-type", "application/json")
             .body(Body::from(body.to_string()))
             .unwrap();
@@ -507,6 +635,160 @@ mod tests {
         );
         assert_eq!(
             post_json(app, "/api/v1/automations/import-ha", serde_json::json!({}))
+                .await
+                .0,
+            StatusCode::NOT_FOUND
+        );
+    }
+
+    #[tokio::test]
+    async fn dashboards_accept_lovelace_yaml_and_flag_missing_entities() {
+        let (app, _) = app(AuthMode::Dev);
+        let yaml = "url_path: securite\ntitle: Sécurité\nviews:\n  - cards:\n      - type: custom:mushroom-entity-card\n        entity: light.salon\n      - type: tile\n        entity: light.disparue\n";
+        let (code, created) = post_json(
+            app.clone(),
+            "/api/v1/dashboards",
+            serde_json::json!({ "yaml": yaml }),
+        )
+        .await;
+        assert_eq!(code, StatusCode::OK, "{created}");
+        assert_eq!(created["summary"]["url_path"], "securite");
+        let (_, got) = get_json(app.clone(), "/api/v1/dashboards/securite").await;
+        assert_eq!(got["doc"]["views"][0]["cards"][0]["type"], "tile");
+        assert_eq!(
+            got["issues"][0]["message"],
+            "entité absente : light.disparue"
+        );
+        assert_eq!(got["editable"], true);
+        assert!(got["yaml"].as_str().unwrap().contains("light.salon"));
+
+        let again = post_json(
+            app.clone(),
+            "/api/v1/dashboards",
+            serde_json::json!({ "yaml": yaml }),
+        )
+        .await;
+        assert_eq!(again.0, StatusCode::CONFLICT);
+        let (code, put) = send_json(
+            app.clone(),
+            "PUT",
+            "/api/v1/dashboards/securite",
+            serde_json::json!({ "yaml": "url_path: ignorée\ntitle: Alarme\nviews: []\n" }),
+        )
+        .await;
+        assert_eq!(code, StatusCode::OK, "{put}");
+        assert_eq!(put["summary"]["title"], "Alarme");
+        assert_eq!(
+            put["summary"]["url_path"], "securite",
+            "the path in the URL wins"
+        );
+        let (_, list) = get_json(app.clone(), "/api/v1/dashboards").await;
+        assert_eq!(list.as_array().unwrap().len(), 1);
+        let bad = post_json(
+            app.clone(),
+            "/api/v1/dashboards",
+            serde_json::json!({ "yaml": "url_path: Pas Bon\nviews: []\n" }),
+        )
+        .await;
+        assert_eq!(bad.0, StatusCode::BAD_REQUEST);
+        assert_eq!(
+            send_json(
+                app.clone(),
+                "DELETE",
+                "/api/v1/dashboards/securite",
+                Value::Null
+            )
+            .await
+            .0,
+            StatusCode::OK
+        );
+        assert_eq!(
+            get_json(app, "/api/v1/dashboards/securite").await.0,
+            StatusCode::NOT_FOUND
+        );
+    }
+
+    #[tokio::test]
+    async fn calendar_and_todo_check_domain_and_source() {
+        let (app, _) = app(AuthMode::Dev);
+        assert_eq!(
+            get_json(app.clone(), "/api/v1/calendars/light.salon/events")
+                .await
+                .0,
+            StatusCode::BAD_REQUEST
+        );
+        // no HA configured in tests
+        assert_eq!(
+            get_json(
+                app.clone(),
+                "/api/v1/calendars/calendar.perso/events?days=3"
+            )
+            .await
+            .0,
+            StatusCode::NOT_FOUND
+        );
+        assert_eq!(
+            get_json(app, "/api/v1/todo/todo.courses/items").await.0,
+            StatusCode::NOT_FOUND
+        );
+    }
+
+    #[tokio::test]
+    async fn weather_and_energy_validate_before_asking_ha() {
+        let (app, _) = app(AuthMode::Dev);
+        let code = |u: &'static str| {
+            let app = app.clone();
+            async move { get_json(app, u).await.0 }
+        };
+        assert_eq!(
+            code("/api/v1/weather/light.salon/forecast").await,
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            code("/api/v1/weather/weather.x/forecast?type=weekly").await,
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            code("/api/v1/energy/statistics?ids=a&start=hier&end=2026-10-17T00:00:00Z").await,
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            code(
+                "/api/v1/energy/statistics?ids=&start=2026-10-16T00:00:00Z&end=2026-10-17T00:00:00Z"
+            )
+            .await,
+            StatusCode::BAD_REQUEST
+        );
+        // valid, but no HA configured in tests
+        assert_eq!(code("/api/v1/energy/prefs").await, StatusCode::NOT_FOUND);
+        assert_eq!(
+            code("/api/v1/weather/weather.x/forecast").await,
+            StatusCode::NOT_FOUND
+        );
+    }
+
+    #[tokio::test]
+    async fn camera_snapshots_are_proxied() {
+        let (app, _) = app(AuthMode::Dev);
+        let res = app
+            .clone()
+            .oneshot(
+                Request::get("/api/v1/cameras/camera.salon/snapshot")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(res.status(), StatusCode::OK);
+        assert_eq!(res.headers()["content-type"], "image/jpeg");
+        assert_eq!(
+            get_json(app.clone(), "/api/v1/cameras/light.salon/snapshot")
+                .await
+                .0,
+            StatusCode::BAD_REQUEST
+        );
+        assert_eq!(
+            get_json(app, "/api/v1/cameras/camera.garage/snapshot")
                 .await
                 .0,
             StatusCode::NOT_FOUND

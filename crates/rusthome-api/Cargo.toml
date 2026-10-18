@@ -16,9 +16,13 @@ futures-util = "0.3.34"
 openidconnect = "4.0.1"
 rusthome-automation = { version = "0.1.0", path = "../rusthome-automation" }
 rusthome-core = { version = "0.1.0", path = "../rusthome-core" }
+rusthome-dashboard = { version = "0.1.0", path = "../rusthome-dashboard" }
+rusthome-frigate = { version = "0.1.0", path = "../rusthome-frigate" }
 rusthome-ha-bridge = { version = "0.1.0", path = "../rusthome-ha-bridge" }
 rusthome-model = { version = "0.1.0", path = "../rusthome-model" }
 rusthome-recorder = { version = "0.1.0", path = "../rusthome-recorder" }
+rusthome-z2m = { version = "0.1.0", path = "../rusthome-z2m" }
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls", "stream"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 serde_yaml = "0.9.34"

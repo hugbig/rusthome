@@ -3,11 +3,17 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { OUTCOME_LABELS, request } from '#lib/api.ts';
+	import { mdiPlay, mdiToggleSwitch, mdiToggleSwitchOffOutline } from '@mdi/js';
+	import { parse, stringify } from 'yaml';
+	import AutomationEditor from '#lib/automation/AutomationEditor.svelte';
+	import type { Item } from '#lib/automation/blocks.ts';
+	import Menu from '#lib/components/Menu.svelte';
 	import YamlEditor from '#lib/components/YamlEditor.svelte';
+	import { UI } from '#lib/dashboard/icons.ts';
 	import { session } from '#lib/stores/session.svelte.ts';
 	import type { AutomationInfo, AutomationTrace } from '#lib/types.ts';
 
-	const NEW_TEMPLATE = `alias: Nouvel automatisme
+	const NEW_TEMPLATE = `alias: Nouvelle automatisation
 description: ''
 mode: single
 triggers:
@@ -71,6 +77,20 @@ actions:
 
 	const dirty = $derived(yamlText !== saved);
 
+	// Visuel et YAML : deux vues du même document. Le texte YAML fait foi ;
+	// l'éditeur visuel le relit et le réécrit.
+	let tab = $state<'visual' | 'yaml'>('visual');
+	const parsed = $derived.by((): { doc: Item | null; error: string | null } => {
+		try {
+			const d: unknown = parse(yamlText);
+			return d && typeof d === 'object' && !Array.isArray(d)
+				? { doc: d as Item, error: null }
+				: { doc: null, error: 'Une automatisation est un objet YAML.' };
+		} catch (e) {
+			return { doc: null, error: e instanceof Error ? e.message.split('\n')[0]! : String(e) };
+		}
+	});
+
 	async function save() {
 		const r = isNew
 			? await request<AutomationInfo>('POST', 'automations', { yaml: yamlText })
@@ -87,9 +107,9 @@ actions:
 			? { kind: 'ok', text: 'Enregistré.' }
 			: {
 					kind: 'error',
-					text: 'Enregistré, mais l’automatisme contient des erreurs (il reste désactivé).'
+					text: 'Enregistré, mais l’automatisation contient des erreurs (elle reste désactivée).'
 				};
-		if (isNew) await goto(resolve('/automatismes/[id]', { id: r.data.id }));
+		if (isNew) await goto(resolve('/automatisations/[id]', { id: r.data.id }));
 	}
 
 	async function action(kind: 'enable' | 'disable' | 'run') {
@@ -110,7 +130,7 @@ actions:
 	async function remove() {
 		if (!confirm(`Supprimer « ${info?.alias} » ? Cette action est définitive.`)) return;
 		const r = await request('DELETE', `automations/${encodeURIComponent(id)}`);
-		if (r.ok) await goto(resolve('/automatismes'));
+		if (r.ok) await goto(resolve('/automatisations'));
 		else message = { kind: 'error', text: r.error };
 	}
 
@@ -125,24 +145,48 @@ actions:
 	};
 </script>
 
-<p class="crumbs"><a href={resolve('/automatismes')}>Automatismes</a></p>
+<p class="crumbs"><a href={resolve('/automatisations')}>Automatisations</a></p>
 
 <div class="head">
 	<div>
-		<h1>{isNew ? 'Nouvel automatisme' : (info?.alias ?? id)}</h1>
+		<h1>{isNew ? 'Nouvelle automatisation' : (info?.alias ?? id)}</h1>
 		{#if info}<code>{info.entity_id}</code>{/if}
 	</div>
-	{#if info && isAdmin}
-		<div class="actions">
-			{#if info.enabled}
-				<button onclick={() => action('disable')}>Désactiver</button>
-			{:else}
-				<button onclick={() => action('enable')} disabled={!info.valid || dirty}>Activer</button>
-			{/if}
-			<button onclick={() => action('run')} disabled={!info.valid || dirty}>Exécuter</button>
-			<button class="danger" onclick={remove}>Supprimer</button>
-		</div>
-	{/if}
+	<div class="actions">
+		{#if info}
+			<span class="state" class:on={info.enabled}>{info.enabled ? 'Active' : 'Désactivée'}</span>
+		{/if}
+		{#if isAdmin}
+			<button class="primary" onclick={save} disabled={(!dirty && !isNew) || !!parsed.error}
+				>Enregistrer</button
+			>
+		{/if}
+		{#if info && isAdmin}
+			<Menu
+				items={[
+					{
+						label: 'Exécuter les actions',
+						icon: mdiPlay,
+						disabled: !info.valid || dirty,
+						onclick: () => action('run')
+					},
+					info.enabled
+						? {
+								label: 'Désactiver',
+								icon: mdiToggleSwitchOffOutline,
+								onclick: () => action('disable')
+							}
+						: {
+								label: 'Activer',
+								icon: mdiToggleSwitch,
+								disabled: !info.valid || dirty,
+								onclick: () => action('enable')
+							},
+					{ label: 'Supprimer', icon: UI.remove, danger: true, divider: true, onclick: remove }
+				]}
+			/>
+		{/if}
+	</div>
 </div>
 
 {#if message}<p class="msg {message.kind} card" role="status">{message.text}</p>{/if}
@@ -161,19 +205,33 @@ actions:
 	</section>
 {/if}
 
-<section class="card">
-	<div class="row">
-		<h2>YAML</h2>
-		{#if isAdmin}
-			<button class="primary" onclick={save} disabled={!dirty && !isNew}>Enregistrer</button>
-		{/if}
-	</div>
-	<YamlEditor bind:value={yamlText} readonly={!isAdmin} />
-	<p class="note">
-		Format Home Assistant. Les anciennes clés (<code>platform</code>, <code>service</code>) et les
-		références <code>device_id</code> sont converties à l’enregistrement.
-	</p>
-</section>
+<nav class="tabs" aria-label="Mode d’édition">
+	<button aria-pressed={tab === 'visual'} onclick={() => (tab = 'visual')}>Éditeur visuel</button>
+	<button aria-pressed={tab === 'yaml'} onclick={() => (tab = 'yaml')}>YAML</button>
+</nav>
+
+{#if tab === 'visual'}
+	{#if parsed.doc}
+		<AutomationEditor
+			doc={parsed.doc}
+			readonly={!isAdmin}
+			onchange={(d) => (yamlText = stringify(d))}
+		/>
+	{:else}
+		<p class="msg error card">
+			Le YAML contient une erreur ({parsed.error}) : corrigez-la dans l’onglet YAML.
+		</p>
+	{/if}
+{:else}
+	<section class="card">
+		<YamlEditor bind:value={yamlText} readonly={!isAdmin} />
+		{#if parsed.error}<p class="msg error">{parsed.error}</p>{/if}
+		<p class="note">
+			Format Home Assistant. Les anciennes clés (<code>platform</code>, <code>service</code>) et les
+			références <code>device_id</code> sont converties à l’enregistrement.
+		</p>
+	</section>
+{/if}
 
 {#if !isNew}
 	<section class="card">
@@ -267,6 +325,30 @@ actions:
 	}
 	.danger {
 		color: #e66767;
+	}
+	.state {
+		font-size: 0.8rem;
+		padding: 3px 10px;
+		border-radius: 999px;
+		background: var(--surface-2);
+		color: var(--text-muted);
+	}
+	.state.on {
+		background: #1c7c4a;
+		color: #fff;
+	}
+	.tabs {
+		display: flex;
+		gap: 4px;
+		margin-bottom: 12px;
+	}
+	.tabs button {
+		border-radius: 999px;
+	}
+	.tabs button[aria-pressed='true'] {
+		background: var(--primary);
+		border-color: var(--primary);
+		color: var(--on-primary);
 	}
 	.msg {
 		font-size: 0.9rem;

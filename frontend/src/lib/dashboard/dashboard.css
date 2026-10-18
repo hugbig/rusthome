@@ -1,0 +1,111 @@
+/* Styles communs aux cartes de dashboard (importés par la page de dashboard). */
+:root {
+	/* Statuts réservés (jauges, alarme) : toujours accompagnés d'un texte. */
+	--good: #1c7c4a;
+	--warning: #b26b00;
+	--critical: #b3261e;
+	--active-bg: var(--surface);
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		--good: #3fa66b;
+		--warning: #d89b00;
+		--critical: #e66767;
+		--active-bg: var(--surface);
+	}
+}
+:root[data-theme='dark'] {
+	--good: #3fa66b;
+	--warning: #d89b00;
+	--critical: #e66767;
+	--active-bg: var(--surface);
+}
+
+.dcard {
+	background: var(--surface);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
+	padding: 14px;
+	min-width: 0;
+	box-sizing: border-box;
+}
+.dcard h3 {
+	margin: 0 0 10px;
+	font-size: 0.95rem;
+	font-weight: 600;
+	letter-spacing: -0.01em;
+}
+.dcard .muted {
+	color: var(--text-muted);
+	font-size: 0.85rem;
+}
+.dbtn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 7px 14px;
+	border-radius: var(--radius-sm);
+	border: 1px solid var(--border);
+	background: var(--surface-2);
+	color: var(--text);
+	cursor: pointer;
+	font: inherit;
+	font-weight: 500;
+	min-height: 36px;
+	transition:
+		background 0.15s,
+		border-color 0.15s;
+}
+.dbtn:hover:not(:disabled) {
+	background: var(--surface-3);
+}
+.dbtn:disabled {
+	opacity: 0.45;
+	cursor: default;
+}
+.dbtn.primary {
+	background: var(--primary);
+	border-color: var(--primary);
+	color: var(--on-primary);
+}
+.dbtn.primary:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--primary) 88%, white);
+}
+/* Pastille d'icône : couleur de l'entité (lumière) quand elle est active */
+.dicon {
+	display: grid;
+	place-items: center;
+	width: 38px;
+	height: 38px;
+	border-radius: 50%;
+	background: var(--surface-2);
+	color: var(--text-muted);
+	flex: none;
+	transition:
+		background 0.2s,
+		color 0.2s;
+}
+.dicon.on {
+	background: color-mix(in srgb, var(--accent, var(--primary)) 20%, transparent);
+	color: var(--accent, var(--primary-text));
+}
+.dstack {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	min-width: 0;
+}
+.dstack.horizontal {
+	flex-direction: row;
+}
+.dstack.horizontal > * {
+	flex: 1 1 0;
+}
+.dgrid {
+	display: grid;
+	grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+	gap: 8px;
+	min-width: 0;
+}

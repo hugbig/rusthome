@@ -1,13 +1,23 @@
 # RustHome : commandes de développement (cf. AGENTS.md §4.3)
 set dotenv-load := true
 
+# Deux compilations Rust en parallèle au plus : WSL (10 Go) est partagé avec
+# VS Code ; au-delà, la mémoire sature. Surchargeable : CARGO_BUILD_JOBS=4 just check
+export CARGO_BUILD_JOBS := env_var_or_default("CARGO_BUILD_JOBS", "2")
+
 default:
     @just --list
 
-# Backend + frontend (Vite en rechargement à chaud). Pas de recette shebang :
-# just les écrit dans $XDG_RUNTIME_DIR, absent sous WSL sans systemd.
+# Pas de recette shebang : just les écrit dans $XDG_RUNTIME_DIR, absent sous
+# WSL sans systemd. Sans watchexec (`cargo install watchexec-cli --locked`),
+# le backend est lancé une seule fois.
+# Backend + frontend relancés à chaque modification (Vite à chaud, backend via watchexec)
 dev:
-    bash -c 'trap "kill 0" EXIT; (cd frontend && pnpm dev) & cargo run -p rusthome'
+    bash -c 'trap "kill 0" EXIT; (cd frontend && pnpm dev) & just backend-watch'
+
+# Backend relancé à chaque modification du code Rust ou des migrations
+backend-watch:
+    bash -c 'if command -v watchexec >/dev/null; then exec watchexec --restart --watch crates --watch Cargo.toml --exts rs,toml,sql -- cargo run -p rusthome; else echo "watchexec absent : backend sans relance automatique (cargo install watchexec-cli --locked)"; exec cargo run -p rusthome; fi'
 
 # Backend seul
 backend:

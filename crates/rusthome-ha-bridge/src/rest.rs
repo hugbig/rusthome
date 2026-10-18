@@ -68,6 +68,118 @@ pub async fn fetch_automations(cfg: &BridgeConfig) -> Result<Vec<HaAutomation>, 
     Ok(out)
 }
 
+/// Current image of a camera entity: `GET /api/camera_proxy/<entity_id>`.
+/// Returns `(content type, bytes)`.
+pub async fn camera_snapshot(
+    cfg: &BridgeConfig,
+    entity_id: &str,
+) -> Result<(String, Vec<u8>), BridgeError> {
+    let path = format!("/api/camera_proxy/{entity_id}");
+    let url = format!("{}{path}", cfg.url.as_str().trim_end_matches('/'));
+    let res = reqwest::Client::new()
+        .get(url)
+        .bearer_auth(&cfg.token)
+        .send()
+        .await
+        .map_err(|e| BridgeError::Protocol(format!("GET {path}: {e}")))?;
+    if !res.status().is_success() {
+        return Err(BridgeError::CommandFailed {
+            command: "GET",
+            message: format!("{path}: HTTP {}", res.status()),
+        });
+    }
+    let content_type = res
+        .headers()
+        .get(reqwest::header::CONTENT_TYPE)
+        .and_then(|v| v.to_str().ok())
+        .unwrap_or("image/jpeg")
+        .to_owned();
+    let bytes = res
+        .bytes()
+        .await
+        .map_err(|e| BridgeError::Protocol(format!("GET {path}: {e}")))?;
+    Ok((content_type, bytes.to_vec()))
+}
+
+/// Events of a calendar between two instants:
+/// `GET /api/calendars/<entity_id>?start=…&end=…` (read-only).
+pub async fn calendar_events(
+    cfg: &BridgeConfig,
+    entity_id: &str,
+    start: &str,
+    end: &str,
+) -> Result<Vec<Value>, BridgeError> {
+    let http = reqwest::Client::new();
+    let path = format!("/api/calendars/{entity_id}");
+    let mut url = cfg
+        .url
+        .join(&path)
+        .map_err(|e| BridgeError::Url(e.to_string()))?;
+    url.query_pairs_mut()
+        .append_pair("start", start)
+        .append_pair("end", end);
+    let res = http
+        .get(url)
+        .bearer_auth(&cfg.token)
+        .send()
+        .await
+        .map_err(|e| BridgeError::Protocol(format!("GET {path}: {e}")))?;
+    if !res.status().is_success() {
+        return Err(BridgeError::CommandFailed {
+            command: "GET",
+            message: format!("{path}: HTTP {}", res.status()),
+        });
+    }
+    res.json()
+        .await
+        .map_err(|e| BridgeError::Protocol(format!("GET {path}: {e}")))
+}
+
+/// HA paths a media file may come from (signed media, thumbnails, Frigate
+/// media of the HA integration, camera proxy). Nothing else of the HA API is
+/// reachable through the media proxy.
+pub const MEDIA_PREFIXES: [&str; 5] = [
+    "/media/",
+    "/api/media_source_thumbnail",
+    "/api/frigate/",
+    "/api/camera_proxy/",
+    "/api/image_proxy/",
+];
+
+/// Is `path` (with its query) a HA media path, without traversal?
+#[must_use]
+pub fn is_media_path(path: &str) -> bool {
+    let p = path.split('?').next().unwrap_or_default();
+    MEDIA_PREFIXES.iter().any(|m| p.starts_with(m)) && !p.contains("..") && !p.contains("//")
+}
+
+/// Opens a HA media file (GET), forwarding `Range` for video seeking.
+pub async fn open_media(
+    cfg: &BridgeConfig,
+    path: &str,
+    range: Option<&str>,
+) -> Result<reqwest::Response, BridgeError> {
+    if !is_media_path(path) {
+        return Err(BridgeError::Protocol(format!("not a media path: {path}")));
+    }
+    let url = format!("{}{path}", cfg.url.as_str().trim_end_matches('/'));
+    let mut req = reqwest::Client::new().get(url).bearer_auth(&cfg.token);
+    if let Some(r) = range {
+        req = req.header(reqwest::header::RANGE, r);
+    }
+    let res = req
+        .send()
+        .await
+        .map_err(|e| BridgeError::Protocol(format!("GET {path}: {e}")))?;
+    if !res.status().is_success() {
+        return Err(BridgeError::CommandFailed {
+            command: "GET",
+            message: format!("{path}: HTTP {}", res.status()),
+        });
+    }
+    Ok(res)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -115,5 +227,67 @@ mod tests {
                 .iter()
                 .all(|r| r.method == wiremock::http::Method::GET)
         );
+    }
+
+    #[tokio::test]
+    async fn camera_snapshot_is_a_get() {
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/camera_proxy/camera.salon"))
+            .and(header("authorization", "Bearer t"))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .insert_header("content-type", "image/jpeg")
+                    .set_body_bytes(vec![0xff, 0xd8]),
+            )
+            .mount(&server)
+            .await;
+        let cfg = BridgeConfig {
+            url: url::Url::parse(&server.uri()).unwrap(),
+            token: "t".into(),
+        };
+        let (ct, bytes) = camera_snapshot(&cfg, "camera.salon").await.unwrap();
+        assert_eq!((ct.as_str(), bytes), ("image/jpeg", vec![0xff, 0xd8]));
+        assert!(camera_snapshot(&cfg, "camera.absente").await.is_err());
+    }
+
+    #[tokio::test]
+    async fn calendar_events_are_a_get_with_range() {
+        use wiremock::matchers::query_param;
+        let server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/api/calendars/calendar.perso"))
+            .and(query_param("start", "2026-10-17T00:00:00Z"))
+            .and(query_param("end", "2026-10-20T00:00:00Z"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(
+                    json!([{"summary": "Piscine", "start": {"date": "2026-10-18"}}]),
+                ),
+            )
+            .mount(&server)
+            .await;
+        let cfg = BridgeConfig {
+            url: url::Url::parse(&server.uri()).unwrap(),
+            token: "t".into(),
+        };
+        let ev = calendar_events(
+            &cfg,
+            "calendar.perso",
+            "2026-10-17T00:00:00Z",
+            "2026-10-20T00:00:00Z",
+        )
+        .await
+        .unwrap();
+        assert_eq!(ev[0]["summary"], "Piscine");
+    }
+
+    #[test]
+    fn media_paths_are_restricted() {
+        assert!(is_media_path("/media/local/film.mp4?authSig=x"));
+        assert!(is_media_path("/api/frigate/notifications/abc/snapshot.jpg"));
+        assert!(!is_media_path("/api/states"));
+        assert!(!is_media_path("/api/config/core"));
+        assert!(!is_media_path("/media/../api/states"));
+        assert!(!is_media_path("https://evil.example/x"));
     }
 }

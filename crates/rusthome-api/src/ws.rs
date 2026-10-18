@@ -88,6 +88,11 @@ mod tests {
                 recorder: None,
                 auth: AuthMode::Dev,
                 automations: None,
+                dashboards: None,
+                system: serde_json::Value::Null,
+                display_dashboard: None,
+                zigbee: None,
+                frigate: None,
             },
             None,
         );

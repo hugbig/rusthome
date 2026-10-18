@@ -5,6 +5,7 @@
 //! provides `light.*` / `scene.turn_on`. **Read-only by default**
 //! (`RUSTHOME_HUE_READ_ONLY=true`): writes are refused before any request.
 
+pub mod color;
 pub mod mapping;
 mod sse;
 

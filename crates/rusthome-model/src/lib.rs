@@ -5,6 +5,7 @@
 //! (cf. docs/architecture.md §4.1).
 
 mod entity_id;
+pub mod refs;
 mod registry;
 mod state;
 
