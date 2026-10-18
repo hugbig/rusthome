@@ -31,6 +31,17 @@ describe('callService', () => {
 		}
 	});
 
+	it('refuse un nom de service qui viserait une autre route', async () => {
+		let called = false;
+		const f = (async () => {
+			called = true;
+			return new Response('{}');
+		}) as unknown as typeof fetch;
+		const r = await callService('x', 'y/../../zigbee/devices/0x1/remove', {}, f);
+		expect(r.ok).toBe(false);
+		expect(called).toBe(false);
+	});
+
 	it('explique une entité pilotée par Home Assistant', () => {
 		expect(
 			explainError({

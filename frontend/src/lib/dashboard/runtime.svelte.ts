@@ -3,7 +3,7 @@ import { goto } from '$app/navigation';
 import { callService, explainError } from '../api';
 import { domainOf } from '../format';
 import type { Action } from './model';
-import { splitService } from './model';
+import { safeUrl, splitService } from './model';
 
 class DashboardUi {
 	/** Entité dont la fiche est ouverte. */
@@ -71,7 +71,9 @@ export async function run(action: Action, entityId?: string): Promise<void> {
 			return;
 		}
 		case 'url':
-			if (action.url_path) window.open(action.url_path, '_blank', 'noopener');
+			// http(s) ou chemin du site seulement : jamais `javascript:` (revue n° 40)
+			if (action.url_path && safeUrl(action.url_path))
+				window.open(action.url_path, '_blank', 'noopener');
 			return;
 		case 'perform-action':
 			if (action.perform_action)

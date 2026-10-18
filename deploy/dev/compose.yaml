@@ -11,3 +11,17 @@ services:
     image: binwiederhier/ntfy
     command: serve
     ports: ["127.0.0.1:8090:80"]
+  # ESPHome Builder (même version que l'add-on de HA) : compile, OTA et
+  # logs, piloté par RustHome via /ws (spec §5.3 bis). Port publié en local
+  # seulement. Données dans var/esphome (ignoré par git) : sans les projets
+  # de l'alarme, et avec des secrets factices.
+  esphome:
+    image: ghcr.io/esphome/esphome:2026.9.1
+    ports: ["127.0.0.1:6052:6052"]
+    volumes:
+      - ../../var/esphome:/config
+      - esphome-cache:/cache
+    environment:
+      PLATFORMIO_CORE_DIR: /cache/platformio
+volumes:
+  esphome-cache:

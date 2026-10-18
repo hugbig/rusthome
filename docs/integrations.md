@@ -23,7 +23,7 @@
 | (Z2M via mqtt) | – | Natif, intégration `z2m` dédiée : exposes, commandes, gestion | L | M2 / M5 |
 | (Thingino via mqtt) | – | Natif MQTT : flux, mouvement, personne, + réglages en option | M | M2 |
 | (Awtrix via mqtt) | – | Natif MQTT + module « apps Awtrix » | S | M3 |
-| `esphome` ×7 | 20 | Crate `esphome-native-api`, rôle complet de hub (spec §5.3) | XL | M6 |
+| `esphome` ×7 | 20 | Crate `esphome-native-api`, rôle complet de hub (spec §5.3) ; gestion des projets (CRUD, compilation, flash USB/Wi-Fi, logs) via le conteneur ESPHome Builder (spec §5.3 bis) | XL | M6 |
 | `alarmo` | 1 | **Équivalent natif** : centrale d'alarme (spec §7) | L | M7 |
 | `frigate` | 17 | Natif HTTP + MQTT | M | M2 |
 | `onvif` ×2 | 16 | Natif SOAP minimal (profils, snapshot, PTZ) + RTSP via go2rtc | M | M2 |

@@ -6,6 +6,7 @@
 mod auth;
 pub mod automations;
 pub mod dashboards;
+pub mod esphome;
 mod media;
 pub mod oidc;
 mod panels;
@@ -46,6 +47,8 @@ pub struct ApiState {
     pub zigbee: Option<std::sync::Arc<rusthome_z2m::Z2m>>,
     /// Frigate media (events, clips, recordings) for the media browser.
     pub frigate: Option<std::sync::Arc<rusthome_frigate::Frigate>>,
+    /// ESPHome projects through the ESPHome Builder container.
+    pub esphome: Option<std::sync::Arc<esphome::EsphomeCtx>>,
 }
 
 /// Builds the router. `static_dir`, when set, serves the built frontend
@@ -120,6 +123,7 @@ pub fn router(state: ApiState, static_dir: Option<PathBuf>) -> Router {
         .route("/energy/statistics", get(panels::energy_statistics))
         .merge(media::routes())
         .merge(zigbee::routes())
+        .merge(esphome::routes())
         .route("/services", get(list_services))
         .route(
             "/services/{domain}/{service}",
@@ -178,6 +182,27 @@ impl IntoResponse for ApiError {
         };
         (code, Json(json!({ "error": msg }))).into_response()
     }
+}
+
+/// Refuses cross-site WebSocket upgrades (CSWSH): browsers always send
+/// `Origin`, and a WebSocket handshake is not covered by CORS. The page must
+/// come from the host it talks to; clients without `Origin` (scripts,
+/// tests) are not browsers and carry no ambient credentials.
+pub(crate) fn same_origin(headers: &axum::http::HeaderMap) -> bool {
+    use axum::http::header::{HOST, ORIGIN};
+    let Some(origin) = headers.get(ORIGIN) else {
+        return true;
+    };
+    let host = headers.get(HOST).and_then(|h| h.to_str().ok());
+    let origin_host = origin
+        .to_str()
+        .ok()
+        .and_then(|o| url::Url::parse(o).ok())
+        .and_then(|u| {
+            let h = u.host_str()?.to_owned();
+            Some(u.port().map_or(h.clone(), |p| format!("{h}:{p}")))
+        });
+    matches!((origin_host, host), (Some(o), Some(h)) if o.eq_ignore_ascii_case(h))
 }
 
 fn parse_id(raw: &str) -> Result<EntityId, ApiError> {
@@ -343,6 +368,37 @@ async fn logbook(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn websocket_upgrades_must_be_same_origin() {
+        use axum::http::{HeaderMap, HeaderValue, header};
+        let h = |origin: Option<&'static str>, host: &'static str| {
+            let mut m = HeaderMap::new();
+            m.insert(header::HOST, HeaderValue::from_static(host));
+            if let Some(o) = origin {
+                m.insert(header::ORIGIN, HeaderValue::from_static(o));
+            }
+            m
+        };
+        assert!(super::same_origin(&h(
+            Some("https://maison.example.org"),
+            "maison.example.org"
+        )));
+        assert!(super::same_origin(&h(
+            Some("http://localhost:5173"),
+            "localhost:5173"
+        )));
+        assert!(super::same_origin(&h(None, "127.0.0.1:8124")));
+        assert!(!super::same_origin(&h(
+            Some("https://evil.example.org"),
+            "maison.example.org"
+        )));
+        assert!(!super::same_origin(&h(
+            Some("http://localhost:5173"),
+            "127.0.0.1:8124"
+        )));
+        assert!(!super::same_origin(&h(Some("null"), "maison.example.org")));
+    }
+
     use std::sync::Arc;
 
     use super::*;
@@ -407,6 +463,7 @@ mod tests {
                     display_dashboard: None,
                     zigbee: None,
                     frigate: None,
+                    esphome: None,
                 },
                 None,
             ),

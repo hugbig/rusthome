@@ -424,6 +424,7 @@ mod tests {
             display_dashboard: None,
             zigbee: None,
             frigate: None,
+            esphome: None,
         }
     }
 

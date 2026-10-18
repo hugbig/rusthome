@@ -108,9 +108,15 @@ pub struct SyncReport {
 pub async fn run(hub: Hub, cfg: BridgeConfig, ready: tokio::sync::watch::Sender<bool>) {
     let mut backoff = Duration::from_secs(1);
     loop {
+        let started = tokio::time::Instant::now();
         match run_once(&hub, &cfg, &ready).await {
             Ok(()) => tracing::warn!("HA bridge: connection closed, reconnecting"),
             Err(e) => tracing::warn!(error = %e, "HA bridge: error, reconnecting in {backoff:?}"),
+        }
+        // After a session that lasted, reconnect fast again: badges scanned
+        // while waiting would be lost (code review n° 43).
+        if started.elapsed() > Duration::from_secs(60) {
+            backoff = Duration::from_secs(1);
         }
         tokio::time::sleep(backoff).await;
         backoff = (backoff * 2).min(Duration::from_secs(60));

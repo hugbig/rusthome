@@ -19,8 +19,10 @@ pub enum MediaError {
 /// Frigate event ids look like `1729212345.123456-abc123`.
 #[must_use]
 pub fn valid_event_id(id: &str) -> bool {
-    !id.is_empty()
-        && id.len() <= 80
+    // Starting with an alphanumeric character rules out `.` and `..`
+    // (code review n° 42).
+    id.len() <= 80
+        && id.chars().next().is_some_and(|c| c.is_ascii_alphanumeric())
         && id
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '-' | '_'))
@@ -241,6 +243,8 @@ mod tests {
     fn event_ids_and_paths() {
         assert!(valid_event_id("1729212345.123456-abc123"));
         assert!(!valid_event_id("../config"));
+        assert!(!valid_event_id(".."));
+        assert!(!valid_event_id("."));
         assert!(!valid_event_id("a/b"));
         assert!(!valid_event_id(""));
         assert_eq!(

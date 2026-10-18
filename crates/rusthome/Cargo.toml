@@ -17,6 +17,7 @@ rusthome-api = { version = "0.1.0", path = "../rusthome-api" }
 rusthome-automation = { version = "0.1.0", path = "../rusthome-automation" }
 rusthome-core = { version = "0.1.0", path = "../rusthome-core" }
 rusthome-dashboard = { version = "0.1.0", path = "../rusthome-dashboard" }
+rusthome-esphome = { version = "0.1.0", path = "../rusthome-esphome" }
 rusthome-frigate = { version = "0.1.0", path = "../rusthome-frigate" }
 rusthome-ha-bridge = { version = "0.1.0", path = "../rusthome-ha-bridge" }
 rusthome-hue = { version = "0.1.0", path = "../rusthome-hue" }

@@ -571,6 +571,8 @@ fn row(r: &Value, path: &str, cx: &mut Ctx) -> Value {
             Value::Object(m)
         }
         Some("divider") => json!({ "type": "divider" }),
+        // already normalized: kept as is (idempotence, code review n° 27)
+        Some("unsupported") => with_type("unsupported", pick(r, &["original"])),
         Some("attribute") => with_type(
             "attribute",
             pick(r, &["entity", "attribute", "name", "icon", "suffix"]),
@@ -683,6 +685,16 @@ mod tests {
     fn one(c: &Value) -> (Value, Vec<Issue>) {
         let (d, issues) = dashboard(&json!({}), &json!({ "views": [{ "cards": [c] }] }));
         (d["views"][0]["cards"][0].clone(), issues)
+    }
+
+    #[test]
+    fn unsupported_rows_are_not_wrapped_twice() {
+        let raw =
+            json!({ "type": "entities", "entities": [{ "type": "custom:inconnue", "x": 1 }] });
+        let (once, _) = one(&raw);
+        let (twice, issues) = one(&once);
+        assert_eq!(once, twice);
+        assert_eq!(issues.len(), 0, "no spurious issue on the second pass");
     }
 
     #[test]

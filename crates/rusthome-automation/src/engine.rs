@@ -63,7 +63,8 @@ struct Entry {
     running: HashMap<u64, tokio::task::AbortHandle>,
     queue: VecDeque<Value>,
     /// `for` timers: trigger index → task waiting for the state to hold.
-    pending_for: HashMap<usize, tokio::task::AbortHandle>,
+    /// `for` timers, one per (trigger, entity) as in HA (code review n° 12).
+    pending_for: HashMap<(usize, EntityId), tokio::task::AbortHandle>,
 }
 
 pub struct Engine {
@@ -185,7 +186,12 @@ impl Engine {
             }
             e.enabled = enabled;
             if !enabled {
+                // Disabling stops everything, as in HA: `for` timers, running
+                // executions (a siren loop…) and queued triggers (code
+                // review n° 15).
                 e.pending_for.drain().for_each(|(_, h)| h.abort());
+                e.running.drain().for_each(|(_, h)| h.abort());
+                e.queue.clear();
             }
         }
         self.publish_state(id);
@@ -364,28 +370,32 @@ impl Engine {
                         below,
                         ..
                     } => {
-                        entity_ids.contains(&change.entity_id)
-                            && {
-                                // Fires on crossing into the range only.
-                                let now_in = numeric_in_range(
-                                    &self.hub,
-                                    &change.entity_id,
-                                    attribute.as_deref(),
-                                    above.as_ref(),
-                                    below.as_ref(),
-                                );
-                                let was_in = change.old_state.as_ref().is_some_and(|old| {
+                        entity_ids.contains(&change.entity_id) && {
+                            // Fires on crossing into the range only.
+                            let now_in = numeric_in_range(
+                                &self.hub,
+                                &change.entity_id,
+                                attribute.as_deref(),
+                                above.as_ref(),
+                                below.as_ref(),
+                            );
+                            let was_in = change.old_state.as_ref().is_some_and(|old| {
                                 let raw = match attribute.as_deref() {
                                     Some(a) => old.attributes.get(a).map(value_as_state),
                                     None => Some(old.state.clone()),
                                 };
+                                // Entity thresholds count too (code review n° 13).
                                 raw.and_then(|r| r.parse::<f64>().ok()).is_some_and(|v| {
-                                    above.as_ref().is_none_or(|a| matches!(a, crate::compile::Threshold::Value(x) if v > *x))
-                                        && below.as_ref().is_none_or(|b| matches!(b, crate::compile::Threshold::Value(x) if v < *x))
+                                    crate::exec::value_in_range(
+                                        &self.hub,
+                                        v,
+                                        above.as_ref(),
+                                        below.as_ref(),
+                                    )
                                 })
                             });
-                                now_in && !was_in
-                            }
+                            now_in && !was_in
+                        }
                     }
                     TriggerKind::EventEntity {
                         entity_id,
@@ -405,20 +415,14 @@ impl Engine {
                     _ => false,
                 };
                 if !fires {
-                    // A change that no longer matches cancels a running `for` timer.
-                    let watches = match &t.kind {
-                        TriggerKind::State { entity_ids, .. }
-                        | TriggerKind::NumericState { entity_ids, .. } => {
-                            entity_ids.contains(&change.entity_id)
-                        }
-                        _ => false,
-                    };
-                    if watches
+                    // A change that breaks the trigger cancels its `for` timer.
+                    let breaks = self.for_broken(&t.kind, change);
+                    if breaks
                         && trigger_for(&t.kind).is_some()
                         && let Some(h) = self
                             .entries()
                             .get_mut(&id)
-                            .and_then(|e| e.pending_for.remove(&idx))
+                            .and_then(|e| e.pending_for.remove(&(idx, change.entity_id.clone())))
                     {
                         h.abort();
                     }
@@ -429,10 +433,53 @@ impl Engine {
                     "entity_id": change.entity_id, "from_state": change.old_state, "to_state": change.new_state,
                 });
                 match trigger_for(&t.kind) {
-                    Some(d) => self.schedule_for(&id, idx, &d, change.entity_id.clone(), trig),
+                    Some(d) => {
+                        let hold = Hold::of(&t.kind);
+                        self.schedule_for(&id, idx, &d, change.entity_id.clone(), trig, hold);
+                    }
                     None => self.fire(&id, trig),
                 }
             }
+        }
+    }
+
+    /// Does this change cancel the trigger's `for` timer? Only when the
+    /// watched value really changed and no longer satisfies the trigger: an
+    /// attribute-only update, or a value still in the range, keeps it (HA
+    /// semantics, code review n° 11 and 13: GPS updates of `person.hugo`
+    /// must not reset « armement après 1 h d'absence »).
+    fn for_broken(&self, kind: &TriggerKind, change: &StateChanged) -> bool {
+        match kind {
+            TriggerKind::State {
+                entity_ids,
+                to,
+                attribute,
+                ..
+            } => {
+                entity_ids.contains(&change.entity_id)
+                    && watched_value_changed(change, attribute.as_deref())
+                    && !change.new_state.as_ref().is_some_and(|n| {
+                        let v = watched_value(n, attribute.as_deref());
+                        to.as_ref().is_some_and(|t| t.contains(&v))
+                    })
+            }
+            TriggerKind::NumericState {
+                entity_ids,
+                attribute,
+                above,
+                below,
+                ..
+            } => {
+                entity_ids.contains(&change.entity_id)
+                    && !numeric_in_range(
+                        &self.hub,
+                        &change.entity_id,
+                        attribute.as_deref(),
+                        above.as_ref(),
+                        below.as_ref(),
+                    )
+            }
+            _ => false,
         }
     }
 
@@ -444,6 +491,7 @@ impl Engine {
         d: &crate::compile::Dur,
         entity: EntityId,
         trig: Value,
+        hold: Hold,
     ) {
         let crate::compile::Dur::Fixed(wait) = *d else {
             tracing::warn!(
@@ -458,19 +506,34 @@ impl Engine {
         let expected_state = trig["to_state"]["state"].clone();
         let me = Arc::clone(self);
         let aid = id.to_owned();
+        let key = (idx, entity.clone());
         let handle = tokio::spawn(async move {
             tokio::time::sleep(wait).await;
-            let still = me.hub.states.get(&entity).is_some_and(|s| {
-                json!(s.last_changed) == expected_changed && json!(s.state) == expected_state
-            });
+            let still = match &hold {
+                Hold::Unchanged => me.hub.states.get(&entity).is_some_and(|s| {
+                    json!(s.last_changed) == expected_changed && json!(s.state) == expected_state
+                }),
+                // numeric: still anywhere in the range, not the same value
+                Hold::InRange {
+                    attribute,
+                    above,
+                    below,
+                } => numeric_in_range(
+                    &me.hub,
+                    &entity,
+                    attribute.as_deref(),
+                    above.as_ref(),
+                    below.as_ref(),
+                ),
+            };
             if still {
                 me.fire(&aid, trig);
             }
         })
         .abort_handle();
         if let Some(e) = self.entries().get_mut(id) {
-            // A newer change restarts the countdown.
-            if let Some(old) = e.pending_for.insert(idx, handle) {
+            // A newer change of the same entity restarts its countdown.
+            if let Some(old) = e.pending_for.insert(key, handle) {
                 old.abort();
             }
         }
@@ -532,10 +595,18 @@ impl Engine {
 
     // ---------------- runs ----------------
 
-    /// Starts a run according to the automation mode.
+    /// Starts a run according to the automation mode (never for a disabled
+    /// automation: a `for` timer or a queued trigger may race the disable).
     pub fn fire(self: &Arc<Self>, id: &str, trigger: Value) {
+        self.start(id, trigger, false);
+    }
+
+    fn start(self: &Arc<Self>, id: &str, trigger: Value, manual: bool) {
         let mut entries = self.entries();
         let Some(e) = entries.get_mut(id) else { return };
+        if !e.enabled && !manual {
+            return;
+        }
         let Some(auto) = e.compiled.clone() else {
             return;
         };
@@ -684,7 +755,7 @@ impl Engine {
         if self.entries().get(id).is_none_or(|e| e.compiled.is_none()) {
             return Err(format!("{id} is unknown or has errors"));
         }
-        self.fire(id, json!({"platform": null, "id": "manual"}));
+        self.start(id, json!({"platform": null, "id": "manual"}), true);
         Ok(())
     }
 }
@@ -715,6 +786,51 @@ fn trigger_for(k: &TriggerKind) -> Option<crate::compile::Dur> {
     match k {
         TriggerKind::State { for_, .. } | TriggerKind::NumericState { for_, .. } => for_.clone(),
         _ => None,
+    }
+}
+
+/// What must still hold when a `for` timer expires.
+enum Hold {
+    /// Same state, same `last_changed` (state triggers).
+    Unchanged,
+    /// Still within the bounds (numeric triggers).
+    InRange {
+        attribute: Option<String>,
+        above: Option<crate::compile::Threshold>,
+        below: Option<crate::compile::Threshold>,
+    },
+}
+
+impl Hold {
+    fn of(kind: &TriggerKind) -> Self {
+        match kind {
+            TriggerKind::NumericState {
+                attribute,
+                above,
+                below,
+                ..
+            } => Self::InRange {
+                attribute: attribute.clone(),
+                above: above.clone(),
+                below: below.clone(),
+            },
+            _ => Self::Unchanged,
+        }
+    }
+}
+
+fn watched_value(s: &rusthome_model::State, attribute: Option<&str>) -> String {
+    match attribute {
+        Some(a) => s.attributes.get(a).map(value_as_state).unwrap_or_default(),
+        None => s.state.clone(),
+    }
+}
+
+/// Did the watched value (state, or attribute) actually change?
+fn watched_value_changed(c: &StateChanged, attribute: Option<&str>) -> bool {
+    match (&c.old_state, &c.new_state) {
+        (Some(o), Some(n)) => watched_value(o, attribute) != watched_value(n, attribute),
+        _ => true,
     }
 }
 

@@ -2,7 +2,7 @@
 
 use axum::extract::State;
 use axum::extract::ws::{Message, WebSocket, WebSocketUpgrade};
-use axum::response::Response;
+use axum::response::{IntoResponse, Response};
 use futures_util::SinkExt;
 use rusthome_core::Event;
 use serde_json::json;
@@ -10,7 +10,14 @@ use tokio::sync::broadcast::error::RecvError;
 
 use crate::ApiState;
 
-pub(crate) async fn handler(ws: WebSocketUpgrade, State(state): State<ApiState>) -> Response {
+pub(crate) async fn handler(
+    ws: WebSocketUpgrade,
+    headers: axum::http::HeaderMap,
+    State(state): State<ApiState>,
+) -> Response {
+    if !crate::same_origin(&headers) {
+        return axum::http::StatusCode::FORBIDDEN.into_response();
+    }
     ws.on_upgrade(move |socket| serve(socket, state))
 }
 
@@ -93,6 +100,7 @@ mod tests {
                 display_dashboard: None,
                 zigbee: None,
                 frigate: None,
+                esphome: None,
             },
             None,
         );

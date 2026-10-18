@@ -698,12 +698,21 @@ pub fn numeric_in_range(
     let Some(v) = raw.and_then(|r| r.parse::<f64>().ok()) else {
         return false;
     };
-    above
-        .and_then(|t| threshold_value(hub, t))
-        .is_none_or(|a| v > a)
-        && below
-            .and_then(|t| threshold_value(hub, t))
-            .is_none_or(|b| v < b)
+    value_in_range(hub, v, above, below)
+}
+
+/// `v` against the bounds. A bound that does not resolve to a number (entity
+/// unknown or unavailable) makes the test false, as in HA: a missing
+/// threshold must not open the range (code review n° 14).
+#[must_use]
+pub fn value_in_range(
+    hub: &Hub,
+    v: f64,
+    above: Option<&Threshold>,
+    below: Option<&Threshold>,
+) -> bool {
+    above.is_none_or(|t| threshold_value(hub, t).is_some_and(|a| v > a))
+        && below.is_none_or(|t| threshold_value(hub, t).is_some_and(|b| v < b))
 }
 
 fn time_matches(

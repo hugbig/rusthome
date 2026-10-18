@@ -105,6 +105,7 @@ async fn main() -> anyhow::Result<()> {
             display_dashboard: cfg.display_dashboard.clone(),
             zigbee: natives.z2m,
             frigate,
+            esphome: start_esphome(cfg.esphome.as_ref())?,
         },
         cfg.static_dir.clone(),
     );
@@ -234,6 +235,26 @@ async fn start_dashboards(recorder: &Recorder) -> anyhow::Result<Arc<rusthome_da
     Ok(store)
 }
 
+/// ESPHome Builder client (spec §5.3 bis); connects on first use.
+fn start_esphome(
+    e: Option<&config::EsphomeSettings>,
+) -> anyhow::Result<Option<Arc<rusthome_api::esphome::EsphomeCtx>>> {
+    let Some(e) = e else { return Ok(None) };
+    tracing::info!(
+        builder = %e.url,
+        locked = ?e.locked,
+        flashable = ?e.flashable,
+        addresses = ?e.addresses,
+        "ESPHome Builder configured"
+    );
+    Ok(Some(Arc::new(rusthome_api::esphome::EsphomeCtx {
+        builder: rusthome_esphome::Builder::new(&e.url).context("RUSTHOME_ESPHOME_URL")?,
+        policy: rusthome_esphome::Policy::new(e.locked.clone(), e.flashable.clone())
+            .with_addresses(e.addresses.clone())
+            .map_err(|why| anyhow::anyhow!("RUSTHOME_ESPHOME_ADDRESSES: {why}"))?,
+    })))
+}
+
 /// MQTT client + Zigbee2MQTT integration (M2), and Frigate when configured.
 fn start_mqtt(
     hub: &Hub,
@@ -292,9 +313,19 @@ fn feed_automations_from_mqtt(
 ) {
     let (mut rx, eng) = (mqtt.messages(), Arc::clone(engine));
     tokio::spawn(async move {
-        while let Ok(m) = rx.recv().await {
-            if let Ok(text) = std::str::from_utf8(&m.payload) {
-                eng.handle_mqtt(&m.topic, text);
+        // A lag (burst of retained messages at start-up) only loses those
+        // messages: the loop goes on (code review n° 18).
+        loop {
+            match rx.recv().await {
+                Ok(m) => {
+                    if let Ok(text) = std::str::from_utf8(&m.payload) {
+                        eng.handle_mqtt(&m.topic, text);
+                    }
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                    tracing::warn!(missed = n, "MQTT → automations: lagging");
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => return,
             }
         }
     });

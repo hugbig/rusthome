@@ -3,4 +3,4 @@ allow-unwrap-in-tests = true
 allow-expect-in-tests = true
 
 # Noms propres du projet, pas des identifiants de code
-doc-valid-idents = ["RustHome", "OpenID", "Zigbee2MQTT", ".."]
+doc-valid-idents = ["RustHome", "OpenID", "Zigbee2MQTT", "ESPHome", ".."]

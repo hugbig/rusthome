@@ -270,8 +270,17 @@ export function tapAction(card: Card, fallback: 'toggle' | 'more-info' = 'more-i
 
 /** `light.turn_on` → `['light', 'turn_on']`. */
 export function splitService(name: string): [string, string] | null {
-	const i = name.indexOf('.');
-	return i > 0 ? [name.slice(0, i), name.slice(i + 1)] : null;
+	// `domaine.service` strict : une valeur venue d'un tableau (éditable par un
+	// résident) ne doit pas pouvoir viser une autre route de l'API (revue n° 5).
+	const m = /^([a-z0-9_]+)\.([a-z0-9_]+)$/.exec(name.trim());
+	return m ? [m[1]!, m[2]!] : null;
+}
+
+/** Adresse d'une action `url` : http(s) ou chemin du site, jamais `javascript:`. */
+export function safeUrl(u: string): boolean {
+	const t = u.trim();
+	if (t.startsWith('/') && !t.startsWith('//')) return true;
+	return /^https?:\/\//i.test(t);
 }
 
 /** Popups : tous les `#hash` d'un ensemble de cartes, récursivement. */

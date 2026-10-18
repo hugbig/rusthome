@@ -7,12 +7,35 @@ services:
     restart: unless-stopped
     env_file: .env          # RUSTHOME_AUTH=oidc, RUSTHOME_OIDC_*, HA_URL/HA_TOKEN… (cf. docs/authelia.md)
     environment:
+      # Imposés ici (l'emportent sur env_file) : un .env copié du modèle de dev
+      # ne doit pas ouvrir l'accès sans authentification (revue n° 39).
+      RUSTHOME_ENV: production
+      RUSTHOME_AUTH: oidc
       RUSTHOME_PUBLIC_URL: https://maison.example.org
+      RUSTHOME_ESPHOME_URL: http://esphome:6052
     volumes:
       - rusthome-data:/data
-    networks: [proxy]       # réseau partagé avec SWAG ; aucun port publié directement
+    networks: [proxy, esphome] # réseau partagé avec SWAG ; aucun port publié directement
+  # ESPHome Builder (spec §5.3 bis) : compile, OTA et logs, piloté par RustHome.
+  # Réseau privé, sans port publié ni mot de passe : seul RustHome le joint.
+  # Les projets (et secrets.yaml) vivent dans le volume, jamais dans le dépôt.
+  # Le nom .local d'une carte ne se résout pas depuis un réseau Docker : on
+  # indique son IP à l'installation (ou `use_address` dans le YAML).
+  esphome:
+    image: ghcr.io/esphome/esphome:2026.9.1
+    restart: unless-stopped
+    volumes:
+      - esphome-config:/config
+      - esphome-cache:/cache
+    environment:
+      PLATFORMIO_CORE_DIR: /cache/platformio
+    networks: [esphome]
 volumes:
   rusthome-data:
+  esphome-config:
+  esphome-cache:
 networks:
   proxy:
     external: true
+  # le Builder doit sortir (toolchains PlatformIO) et joindre les cartes en OTA
+  esphome: {}

@@ -244,7 +244,21 @@ impl Object for DateTimeObject {
                 let fmt = args.first().and_then(Value::as_str).ok_or_else(|| {
                     Error::new(ErrorKind::MissingArgument, "strftime expects a format")
                 })?;
-                Ok(Value::from(self.0.format(fmt).to_string()))
+                // An invalid directive would make `to_string` panic (code
+                // review n° 17): check the format first.
+                let items: Vec<_> = chrono::format::StrftimeItems::new(fmt).collect();
+                if items
+                    .iter()
+                    .any(|i| matches!(i, chrono::format::Item::Error))
+                {
+                    return Err(Error::new(
+                        ErrorKind::InvalidOperation,
+                        format!("invalid strftime format {fmt}"),
+                    ));
+                }
+                Ok(Value::from(
+                    self.0.format_with_items(items.into_iter()).to_string(),
+                ))
             }
             "isoformat" => Ok(Value::from(self.0.to_rfc3339())),
             _ => Err(Error::new(
@@ -297,6 +311,20 @@ mod tests {
 
     fn r(src: &str) -> String {
         engine().render(src, &json!({})).unwrap()
+    }
+
+    #[test]
+    fn an_invalid_strftime_format_is_an_error_not_a_panic() {
+        assert!(
+            engine()
+                .render("{{ now().strftime('%Q') }}", &json!({}))
+                .is_err()
+        );
+        assert!(
+            engine()
+                .render("{{ now().strftime('%') }}", &json!({}))
+                .is_err()
+        );
     }
 
     #[test]

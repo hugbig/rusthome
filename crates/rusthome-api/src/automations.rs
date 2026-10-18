@@ -135,6 +135,17 @@ pub(crate) async fn create(
     Json(body): Json<YamlBody>,
 ) -> Result<Json<Info>, ApiError> {
     admin(&user)?;
+    // Creating with the id of an existing automation would replace it (a
+    // pasted copy of an alarm automation…): only PUT overwrites (code review
+    // n° 10).
+    if let Ok(v) = serde_yaml::from_str::<Value>(&body.yaml)
+        && let Some(id) = v["id"].as_str()
+        && ctx(&s)?.engine.info(id).is_some()
+    {
+        return Err(ApiError::Conflict(format!(
+            "automation {id} already exists: change its id to create a copy"
+        )));
+    }
     let info = apply_yaml(&s, &body.yaml, None)?;
     persist(&s, &info.id).await?;
     Ok(Json(info))

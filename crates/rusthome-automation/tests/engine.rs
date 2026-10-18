@@ -387,3 +387,134 @@ async fn alarm_siren_loop_stops_on_disarm() {
         Some(Outcome::Finished)
     );
 }
+
+fn set_attrs(w: &World, entity: &str, state: &str, attrs: Value) {
+    let Value::Object(m) = attrs else { panic!() };
+    w.hub.states.set(id(entity), state, m, Context::default());
+}
+
+/// Code review n° 11 (alarm): GPS updates of `person.hugo` (attributes only)
+/// must not reset « armement après 1 h d'absence ».
+#[tokio::test(start_paused = true)]
+async fn attribute_updates_keep_a_for_timer() {
+    let w = world();
+    let mut rx = w.hub.bus.subscribe();
+    w.engine.upsert(
+        json!({"id": "f", "alias": "Absence", "triggers": [{"trigger": "state", "entity_id": "person.hugo", "to": "not_home", "for": {"hours": 1}}],
+               "actions": [{"action": "switch.turn_on", "target": {"entity_id": "switch.sirene"}}]}),
+        id("automation.absence"),
+        true,
+        vec![],
+    );
+    set(&w, "person.hugo", "home");
+    set(&w, "person.hugo", "not_home");
+    feed(&w, &mut rx).await;
+    for minute in 1..=50 {
+        tokio::time::advance(Duration::from_mins(1)).await;
+        set_attrs(
+            &w,
+            "person.hugo",
+            "not_home",
+            json!({"latitude": 48.0 + f64::from(minute) / 1000.0}),
+        );
+        feed(&w, &mut rx).await;
+    }
+    tokio::time::advance(Duration::from_mins(11)).await;
+    settle().await;
+    assert_eq!(
+        calls(&w),
+        ["switch.turn_on"],
+        "armed after 1 h despite GPS updates"
+    );
+}
+
+/// Code review n° 12: one `for` timer per entity of the trigger.
+#[tokio::test(start_paused = true)]
+async fn for_timers_are_per_entity() {
+    let w = world();
+    let mut rx = w.hub.bus.subscribe();
+    w.engine.upsert(
+        json!({"id": "p", "alias": "Portes", "mode": "parallel",
+               "triggers": [{"trigger": "state", "entity_id": ["binary_sensor.porte_a", "binary_sensor.porte_b"], "to": "on", "for": {"minutes": 5}}],
+               "actions": [{"action": "light.turn_on", "target": {"entity_id": "light.salon"}}]}),
+        id("automation.portes"),
+        true,
+        vec![],
+    );
+    set(&w, "binary_sensor.porte_a", "off");
+    set(&w, "binary_sensor.porte_b", "off");
+    feed(&w, &mut rx).await;
+    set(&w, "binary_sensor.porte_a", "on");
+    feed(&w, &mut rx).await;
+    tokio::time::advance(Duration::from_mins(2)).await;
+    w.clock.advance(chrono::Duration::seconds(1));
+    set(&w, "binary_sensor.porte_b", "on"); // must not restart porte_a's countdown
+    feed(&w, &mut rx).await;
+    tokio::time::advance(Duration::from_secs(181)).await;
+    settle().await;
+    assert_eq!(calls(&w), ["light.turn_on"], "porte_a after 5 min");
+    tokio::time::advance(Duration::from_mins(2)).await;
+    settle().await;
+    assert_eq!(calls(&w).len(), 2, "then porte_b");
+}
+
+/// Code review n° 15 (alarm): disabling stops the siren loop and the queue.
+#[tokio::test(start_paused = true)]
+async fn disabling_stops_running_executions() {
+    let w = world();
+    let mut rx = w.hub.bus.subscribe();
+    set(&w, "alarm_control_panel.alarmo", "armed_away");
+    w.engine.upsert(
+        json!({"id": "intrusion", "alias": "Intrusion", "mode": "queued",
+               "triggers": [{"trigger": "state", "entity_id": "alarm_control_panel.alarmo", "to": "triggered"}],
+               "actions": [{"repeat": {"while": [{"condition": "state", "entity_id": "alarm_control_panel.alarmo", "state": "triggered"}],
+                                       "sequence": [{"action": "switch.turn_on", "target": {"entity_id": "switch.sirene"}}, {"delay": 8}]}}]}),
+        id("automation.intrusion"),
+        true,
+        vec![],
+    );
+    feed(&w, &mut rx).await;
+    set(&w, "alarm_control_panel.alarmo", "triggered");
+    feed(&w, &mut rx).await;
+    tokio::time::advance(Duration::from_secs(9)).await;
+    settle().await;
+    assert_eq!(calls(&w).len(), 2);
+    w.engine.fire("intrusion", json!({"id": "queued"})); // queued behind the loop
+    w.engine.set_enabled("intrusion", false).unwrap();
+    for _ in 0..30 {
+        tokio::time::advance(Duration::from_secs(1)).await;
+        settle().await;
+    }
+    assert_eq!(calls(&w).len(), 2, "loop and queue stopped");
+    w.engine.fire("intrusion", json!({"id": "late"}));
+    settle().await;
+    assert_eq!(calls(&w).len(), 2, "a disabled automation does not run");
+}
+
+/// Code review n° 13 and 14: entity thresholds fire on the crossing only,
+/// and an unavailable threshold closes the range.
+#[tokio::test(start_paused = true)]
+async fn numeric_entity_thresholds() {
+    let w = world();
+    let mut rx = w.hub.bus.subscribe();
+    set(&w, "input_number.seuil", "25");
+    w.engine.upsert(
+        json!({"id": "n", "alias": "Chaud",
+               "triggers": [{"trigger": "numeric_state", "entity_id": "sensor.temp", "above": "input_number.seuil"}],
+               "actions": [{"action": "switch.turn_on", "target": {"entity_id": "switch.prise"}}]}),
+        id("automation.chaud"),
+        true,
+        vec![],
+    );
+    for v in ["20", "26", "26.5", "27"] {
+        set(&w, "sensor.temp", v);
+        feed(&w, &mut rx).await;
+    }
+    assert_eq!(calls(&w), ["switch.turn_on"], "once, on the crossing");
+    set(&w, "sensor.temp", "20");
+    set(&w, "input_number.seuil", "unavailable");
+    feed(&w, &mut rx).await;
+    set(&w, "sensor.temp", "30");
+    feed(&w, &mut rx).await;
+    assert_eq!(calls(&w).len(), 1, "no bound, no range");
+}

@@ -9,11 +9,17 @@ export async function callService(
 	fetcher: typeof fetch = fetch
 ): Promise<CallResult> {
 	try {
-		const r = await fetcher(`/api/v1/services/${domain}/${service}`, {
-			method: 'POST',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify(data)
-		});
+		const valid = /^[a-z0-9_]+$/;
+		if (!valid.test(domain) || !valid.test(service))
+			return { ok: false, status: 0, error: `service invalide : ${domain}.${service}` };
+		const r = await fetcher(
+			`/api/v1/services/${encodeURIComponent(domain)}/${encodeURIComponent(service)}`,
+			{
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify(data)
+			}
+		);
 		const body: unknown = await r.json().catch(() => null);
 		if (r.ok) return { ok: true, data: body };
 		const error =

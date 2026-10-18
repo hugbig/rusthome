@@ -55,7 +55,9 @@ impl Recorder {
         sqlx::migrate!("./migrations").run(&pool).await?;
         Ok(Self {
             pool,
-            excluded_integrations: Arc::new(vec!["ha:portainer".into()]),
+            // Container metrics: mirrored (`ha:portainer`) or taken over
+            // (`portainer`), never kept in history (code review n° 26).
+            excluded_integrations: Arc::new(vec!["ha:portainer".into(), "portainer".into()]),
         })
     }
 
@@ -371,6 +373,11 @@ impl Recorder {
 
     /// Deletes history older than `keep`. Returns the number of rows removed.
     pub async fn purge(&self, now: DateTime<Utc>, keep: Duration) -> Result<u64, RecorderError> {
+        // A zero or negative retention would delete everything (code review
+        // n° 46): do nothing instead.
+        if keep <= Duration::zero() {
+            return Ok(0);
+        }
         let res = sqlx::query("DELETE FROM states WHERE last_updated < ?")
             .bind((now - keep).to_rfc3339())
             .execute(&self.pool)
@@ -689,6 +696,20 @@ mod tests {
             .await
             .unwrap();
         assert_eq!(removed, 1);
+        assert_eq!(rec.history(&id, t0).await.unwrap().len(), 1);
+        // a zero or negative retention never wipes the history (review n° 46)
+        assert_eq!(
+            rec.purge(t0 + Duration::days(99), Duration::zero())
+                .await
+                .unwrap(),
+            0
+        );
+        assert_eq!(
+            rec.purge(t0 + Duration::days(99), Duration::days(-1))
+                .await
+                .unwrap(),
+            0
+        );
         assert_eq!(rec.history(&id, t0).await.unwrap().len(), 1);
     }
 

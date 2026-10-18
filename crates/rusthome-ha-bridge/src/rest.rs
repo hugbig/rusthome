@@ -149,8 +149,30 @@ pub const MEDIA_PREFIXES: [&str; 5] = [
 /// Is `path` (with its query) a HA media path, without traversal?
 #[must_use]
 pub fn is_media_path(path: &str) -> bool {
-    let p = path.split('?').next().unwrap_or_default();
-    MEDIA_PREFIXES.iter().any(|m| p.starts_with(m)) && !p.contains("..") && !p.contains("//")
+    let Ok(base) = url::Url::parse("http://ha.invalid") else {
+        return false;
+    };
+    media_url(&base, path).is_some()
+}
+
+/// The URL of a HA media path, checked on its **normalized** form: the URL
+/// parser resolves `..`, `%2e%2e`, `.%2E`… exactly as it will be sent, so a
+/// raw-string check alone could be bypassed (code review 2026-10-18, n° 1).
+fn media_url(base: &url::Url, path: &str) -> Option<url::Url> {
+    let raw = path.split('?').next().unwrap_or_default();
+    if !path.starts_with('/') || raw.contains("..") || raw.contains("//") || raw.contains('\\') {
+        return None;
+    }
+    let url = base.join(path).ok()?;
+    let normalized = url.path();
+    let lower = normalized.to_ascii_lowercase();
+    let clean = MEDIA_PREFIXES.iter().any(|m| normalized.starts_with(m))
+        && url.host_str() == base.host_str()
+        && url.port() == base.port()
+        && !lower.contains("%2e")
+        && !lower.contains("%2f")
+        && !lower.contains("%5c");
+    clean.then_some(url)
 }
 
 /// Opens a HA media file (GET), forwarding `Range` for video seeking.
@@ -159,10 +181,8 @@ pub async fn open_media(
     path: &str,
     range: Option<&str>,
 ) -> Result<reqwest::Response, BridgeError> {
-    if !is_media_path(path) {
-        return Err(BridgeError::Protocol(format!("not a media path: {path}")));
-    }
-    let url = format!("{}{path}", cfg.url.as_str().trim_end_matches('/'));
+    let url = media_url(&cfg.url, path)
+        .ok_or_else(|| BridgeError::Protocol(format!("not a media path: {path}")))?;
     let mut req = reqwest::Client::new().get(url).bearer_auth(&cfg.token);
     if let Some(r) = range {
         req = req.header(reqwest::header::RANGE, r);
@@ -186,6 +206,28 @@ mod tests {
     use serde_json::json;
     use wiremock::matchers::{header, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    #[test]
+    fn media_paths_are_checked_after_normalization() {
+        assert!(is_media_path("/media/local/20261001-salon.mp4?authSig=x"));
+        assert!(is_media_path("/media/local/ma%20video.mp4"));
+        assert!(is_media_path("/api/camera_proxy/camera.chambre?token=t"));
+        for bad in [
+            "/media/%2e%2e/api/states",
+            "/media/%2E%2e/api/config",
+            "/media/.%2e/api/error_log",
+            "/media/local/%2e%2e/%2e%2e/api/hassio/backups",
+            "/media/../api/states",
+            "/media//api/states",
+            "/media/local%2f..%2fapi",
+            "/api/states",
+            "//evil.example/media/x",
+            "http://evil.example/media/x",
+            "/media/a\\..\\api",
+        ] {
+            assert!(!is_media_path(bad), "{bad}");
+        }
+    }
 
     #[tokio::test]
     async fn reads_automations_with_get_only() {

@@ -324,9 +324,12 @@ fn strings(v: Option<&Value>) -> Option<Vec<String>> {
 /// `"00:05:00"`, `"05:00"`, `{hours, minutes, seconds, milliseconds}`, seconds, or a template.
 pub fn duration(v: &Value, path: &str) -> R<Dur> {
     match v {
-        Value::Number(n) => Ok(Dur::Fixed(Duration::from_secs_f64(
-            n.as_f64().unwrap_or(0.0).max(0.0),
-        ))),
+        Value::Number(n) => seconds(n.as_f64().unwrap_or(0.0))
+            .map(Dur::Fixed)
+            .ok_or_else(|| CompileError {
+                path: path.into(),
+                message: format!("invalid duration {n}"),
+            }),
         Value::String(s) if s.contains("{{") || s.contains("{%") => Ok(Dur::Template(s.clone())),
         Value::String(s) => parse_hms(s).map(Dur::Fixed).ok_or_else(|| CompileError {
             path: path.into(),
@@ -344,7 +347,10 @@ pub fn duration(v: &Value, path: &str) -> R<Dur> {
                 + f("minutes") * 60.0
                 + f("seconds")
                 + f("milliseconds") / 1000.0;
-            Ok(Dur::Fixed(Duration::from_secs_f64(secs.max(0.0))))
+            seconds(secs).map(Dur::Fixed).ok_or_else(|| CompileError {
+                path: path.into(),
+                message: format!("invalid duration ({secs} s)"),
+            })
         }
         _ => err(path, "invalid duration"),
     }
@@ -364,7 +370,25 @@ pub fn parse_hms(s: &str) -> Option<Duration> {
         [s] => *s,
         _ => return None,
     };
-    (secs >= 0.0).then(|| Duration::from_secs_f64(secs))
+    if secs < 0.0 {
+        return None;
+    }
+    seconds(secs)
+}
+
+/// Longest accepted duration: 400 days (beyond, a typo or a template gone
+/// wrong).
+const MAX_DURATION_SECS: f64 = 400.0 * 86_400.0;
+
+/// Seconds as a duration, negative values clamped to 0. `None` for NaN,
+/// infinity or more than 400 days: `Duration::from_secs_f64` would panic on
+/// a value coming from YAML or a template (code review n° 16).
+#[must_use]
+pub fn seconds(secs: f64) -> Option<Duration> {
+    if !secs.is_finite() || secs > MAX_DURATION_SECS {
+        return None;
+    }
+    Duration::try_from_secs_f64(secs.max(0.0)).ok()
 }
 
 fn time_of_day(s: &str) -> Option<(u32, u32, u32)> {
@@ -685,4 +709,24 @@ fn step(a: &Value, path: &str) -> R<Step> {
         enabled: a["enabled"] != false,
         alias: a["alias"].as_str().map(str::to_owned),
     })
+}
+
+#[cfg(test)]
+mod duration_tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn absurd_durations_are_errors_not_panics() {
+        assert!(duration(&json!(1e20), "d").is_err());
+        assert!(duration(&json!({"days": 1e15}), "d").is_err());
+        assert_eq!(parse_hms("1e300"), None);
+        assert_eq!(seconds(f64::INFINITY), None);
+        assert_eq!(seconds(f64::NAN), None);
+        assert_eq!(seconds(-5.0), Some(Duration::ZERO));
+        assert!(matches!(
+            duration(&json!({"hours": 1}), "d"),
+            Ok(Dur::Fixed(d)) if d == Duration::from_secs(3600)
+        ));
+    }
 }

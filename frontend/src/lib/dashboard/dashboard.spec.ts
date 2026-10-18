@@ -26,6 +26,7 @@ import {
 	fraction,
 	popupHashes,
 	severityOf,
+	safeUrl,
 	splitService,
 	tapAction
 } from './model';
@@ -99,6 +100,15 @@ describe('actions', () => {
 	it('découpe un nom de service', () => {
 		expect(splitService('light.turn_on')).toEqual(['light', 'turn_on']);
 		expect(splitService('invalide')).toBeNull();
+		// pas de traversée vers une autre route de l'API
+		expect(splitService('x.y/../../zigbee/devices/0x1/remove')).toBeNull();
+		expect(splitService('Light.on')).toBeNull();
+		expect([
+			safeUrl('https://x.org'),
+			safeUrl('/tableaux/a'),
+			safeUrl('javascript:alert(1)'),
+			safeUrl('//evil.org')
+		]).toEqual([true, true, false, false]);
 	});
 
 	it('trouve les pop-ups imbriqués', () => {

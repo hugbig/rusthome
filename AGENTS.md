@@ -90,7 +90,7 @@ Déjà présents dans le WSL de Hugo : `build-essential`, `pkg-config`, `libssl-
 ```bash
 nvm use                         # Node 24 (cf. .nvmrc)
 cp .env.example .env            # par défaut : données de démo ; pour le miroir HA, renseigner HA_URL / HA_TOKEN
-just dev-deps                   # docker compose -f deploy/dev/compose.yaml up -d : Mosquitto de dev (port 1884), ntfy de dev
+just dev-deps                   # docker compose -f deploy/dev/compose.yaml up -d : Mosquitto de dev (port 1884), ntfy de dev, ESPHome Builder (port 6052)
 just dev                        # backend (relancé par watchexec) + frontend (vite) en parallèle
 ```
 
@@ -99,6 +99,7 @@ just dev                        # backend (relancé par watchexec) + frontend (v
 - **Auth en dev** : le mode `RUSTHOME_AUTH=dev` crée un utilisateur local `hugo` (admin) sans OIDC. Il est **refusé au démarrage** si `RUSTHOME_ENV=production`.
 - **Données réelles** : `ha_bridge` lit le HA de production (192.168.1.35) en lecture seule. Sans `HA_TOKEN`, le clone démarre avec les données de démo `deploy/dev/fixtures.json` (`RUSTHOME_FIXTURES`).
 - Le Mosquitto de dev est **isolé** (port 1884, jamais le broker de production) : aucune commande n'atteint un appareil réel par accident.
+- L'ESPHome Builder de dev travaille sur `var/esphome` (ignoré par git) : copies des projets **sans ceux de l'alarme**, secrets factices. RustHome ne lui envoie jamais `subscribe_events` (qui ferait sonder les cartes) et refuse l'installation sans fil hors du banc (`RUSTHOME_ESPHOME_FLASHABLE`).
 
 ### 4.3 Commandes `just` attendues
 

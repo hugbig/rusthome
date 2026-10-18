@@ -336,7 +336,12 @@ impl Z2m {
             self.bridge.cancel(&body);
             return Err(bridge::publish_error(e));
         }
-        bridge::answer(rx, std::time::Duration::from_secs(30)).await
+        let answer = bridge::answer(rx, std::time::Duration::from_secs(30)).await;
+        if matches!(answer, Err(bridge::BridgeError::Timeout)) {
+            // no answer will ever come: forget the transaction (code review n° 44)
+            self.bridge.cancel(&body);
+        }
+        answer
     }
 
     /// Subscribes and processes messages forever.

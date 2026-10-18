@@ -68,6 +68,18 @@ pub struct PortainerSettings {
     pub accept_invalid_certs: bool,
 }
 
+/// ESPHome Builder (spec §5.3 bis).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct EsphomeSettings {
+    pub url: Url,
+    /// Read-only projects (the alarm nodes by default).
+    pub locked: Vec<String>,
+    /// Projects RustHome may flash over the air (the bench by default).
+    pub flashable: Vec<String>,
+    /// `project@ip`: the only address over-the-air operations reach.
+    pub addresses: Vec<String>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HueSettings {
     pub url: Url,
@@ -94,6 +106,7 @@ pub struct Config {
     pub mqtt: Option<MqttSettings>,
     pub portainer: Option<PortainerSettings>,
     pub hue: Option<HueSettings>,
+    pub esphome: Option<EsphomeSettings>,
 }
 
 #[derive(Debug, thiserror::Error, PartialEq, Eq)]
@@ -139,6 +152,12 @@ impl Config {
                 "read_only": h.read_only,
             })),
             "portainer": self.portainer.as_ref().and_then(|p| host(&p.url)),
+            "esphome": self.esphome.as_ref().map(|e| serde_json::json!({
+                "builder": host(&e.url),
+                "locked": e.locked,
+                "flashable": e.flashable,
+                "addresses": e.addresses,
+            })),
         })
     }
 
@@ -193,15 +212,7 @@ impl Config {
             .map_err(|_| {
                 ConfigError::Invalid("RUSTHOME_TZ", get("RUSTHOME_TZ").unwrap_or_default().into())
             })?;
-        let retention_days = get("RUSTHOME_RETENTION_DAYS")
-            .unwrap_or("10")
-            .parse()
-            .map_err(|_| {
-                ConfigError::Invalid(
-                    "RUSTHOME_RETENTION_DAYS",
-                    get("RUSTHOME_RETENTION_DAYS").unwrap_or_default().into(),
-                )
-            })?;
+        let retention_days = retention_days(get("RUSTHOME_RETENTION_DAYS"))?;
         let ha = match (get("HA_URL"), get("HA_TOKEN")) {
             (Some(u), Some(t)) => Some((
                 Url::parse(u).map_err(|_| ConfigError::Invalid("HA_URL", u.into()))?,
@@ -213,10 +224,12 @@ impl Config {
         let mqtt = mqtt_settings(vars)?;
         let portainer = portainer_settings(vars)?;
         let hue = hue_settings(vars)?;
+        let esphome = esphome_settings(vars)?;
         Ok(Self {
             mqtt,
             portainer,
             hue,
+            esphome,
             env,
             auth,
             bind,
@@ -243,6 +256,57 @@ impl Config {
             ),
         })
     }
+}
+
+/// History retention in days, at least 1: 0 or less would make the hourly
+/// purge delete everything (code review n° 46).
+fn retention_days(raw: Option<&str>) -> Result<i64, ConfigError> {
+    raw.unwrap_or("10")
+        .parse()
+        .ok()
+        .filter(|d: &i64| *d >= 1)
+        .ok_or_else(|| {
+            ConfigError::Invalid("RUSTHOME_RETENTION_DAYS", raw.unwrap_or_default().into())
+        })
+}
+
+/// ESPHome Builder settings; `None` without `RUSTHOME_ESPHOME_URL`. The
+/// lists default to the alarm nodes (locked) and the bench (flashable); an
+/// empty value means an empty list, on Hugo's decision only.
+fn esphome_settings(
+    vars: &HashMap<String, String>,
+) -> Result<Option<EsphomeSettings>, ConfigError> {
+    let Some(u) = vars
+        .get("RUSTHOME_ESPHOME_URL")
+        .map(String::as_str)
+        .filter(|v| !v.is_empty())
+    else {
+        return Ok(None);
+    };
+    let list = |k: &str, default: &[&str]| -> Vec<String> {
+        vars.get(k).map_or_else(
+            || default.iter().map(|s| (*s).to_owned()).collect(),
+            |v| {
+                v.split(',')
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_owned)
+                    .collect()
+            },
+        )
+    };
+    Ok(Some(EsphomeSettings {
+        url: Url::parse(u).map_err(|_| ConfigError::Invalid("RUSTHOME_ESPHOME_URL", u.into()))?,
+        locked: list(
+            "RUSTHOME_ESPHOME_LOCKED",
+            rusthome_esphome::policy::DEFAULT_LOCKED,
+        ),
+        flashable: list(
+            "RUSTHOME_ESPHOME_FLASHABLE",
+            rusthome_esphome::policy::DEFAULT_FLASHABLE,
+        ),
+        addresses: list("RUSTHOME_ESPHOME_ADDRESSES", &[]),
+    }))
 }
 
 /// Hue settings; `None` unless both URL and key are set.
@@ -353,6 +417,34 @@ mod tests {
         assert_eq!(c.auth, AuthConfig::Dev);
         assert_eq!(c.bind.to_string(), "127.0.0.1:8124");
         assert!(c.ha.is_none());
+    }
+
+    #[test]
+    fn retention_is_at_least_one_day() {
+        assert_eq!(retention_days(None), Ok(10));
+        assert_eq!(retention_days(Some("30")), Ok(30));
+        for bad in ["0", "-3", "dix"] {
+            assert!(retention_days(Some(bad)).is_err(), "{bad}");
+        }
+    }
+
+    #[test]
+    fn esphome_lists_default_to_the_alarm_and_the_bench() {
+        let c =
+            Config::from_vars(&vars(&[("RUSTHOME_ESPHOME_URL", "http://esphome:6052")])).unwrap();
+        let e = c.esphome.unwrap();
+        assert_eq!(e.locked, ["lecteur-alarme", "tag-reader"]);
+        assert_eq!(e.flashable, ["test-nfc"]);
+        let c = Config::from_vars(&vars(&[
+            ("RUSTHOME_ESPHOME_URL", "http://esphome:6052"),
+            ("RUSTHOME_ESPHOME_FLASHABLE", "test-nfc, ir-box"),
+            ("RUSTHOME_ESPHOME_LOCKED", ""),
+        ]))
+        .unwrap();
+        let e = c.esphome.unwrap();
+        assert_eq!(e.locked.len(), 0);
+        assert_eq!(e.flashable, ["test-nfc", "ir-box"]);
+        assert!(Config::from_vars(&vars(&[])).unwrap().esphome.is_none());
     }
 
     #[test]

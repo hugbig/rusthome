@@ -502,9 +502,45 @@ impl Frigate {
         Ok(Value::from(sent))
     }
 
+    /// Frigate announces it is back (`<prefix>/available` = `online`).
+    #[must_use]
+    pub fn back_online(&self, topic: &str, payload: &str) -> bool {
+        topic == format!("{}/available", self.prefix) && payload.trim() == "online"
+    }
+
     /// Loads cameras over HTTP (retrying), then follows MQTT.
     pub async fn run(self: Arc<Self>, mqtt: Mqtt) {
         let mut rx = mqtt.messages();
+        self.sync().await;
+        if let Err(e) = mqtt.subscribe(&format!("{}/#", self.prefix)).await {
+            tracing::error!(error = %e, "Frigate: subscribe failed");
+        }
+        loop {
+            match rx.recv().await {
+                Ok(m) if m.topic.starts_with(&self.prefix) => {
+                    // Snapshots are binary JPEGs: only text payloads matter here.
+                    if let Ok(text) = std::str::from_utf8(&m.payload) {
+                        self.handle_message(&m.topic, text);
+                        // Back after a restart: the entities left
+                        // `unavailable` are reloaded (occupancy feeds the
+                        // alarm, code review n° 20).
+                        if self.back_online(&m.topic, text) {
+                            let me = Arc::clone(&self);
+                            tokio::spawn(async move { me.sync().await });
+                        }
+                    }
+                }
+                Ok(_) => {}
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                    tracing::warn!(missed = n, "Frigate: lagging");
+                }
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => return,
+            }
+        }
+    }
+
+    /// Loads cameras and events in progress over HTTP, retrying until done.
+    async fn sync(&self) {
         let mut backoff = Duration::from_secs(2);
         loop {
             let loaded = async {
@@ -528,24 +564,6 @@ impl Frigate {
             }
             tokio::time::sleep(backoff).await;
             backoff = (backoff * 2).min(Duration::from_secs(60));
-        }
-        if let Err(e) = mqtt.subscribe(&format!("{}/#", self.prefix)).await {
-            tracing::error!(error = %e, "Frigate: subscribe failed");
-        }
-        loop {
-            match rx.recv().await {
-                Ok(m) if m.topic.starts_with(&self.prefix) => {
-                    // Snapshots are binary JPEGs: only text payloads matter here.
-                    if let Ok(text) = std::str::from_utf8(&m.payload) {
-                        self.handle_message(&m.topic, text);
-                    }
-                }
-                Ok(_) => {}
-                Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
-                    tracing::warn!(missed = n, "Frigate: lagging");
-                }
-                Err(tokio::sync::broadcast::error::RecvError::Closed) => return,
-            }
         }
     }
 }
@@ -635,6 +653,15 @@ mod tests {
             .unwrap()
             .state
             .clone()
+    }
+
+    #[test]
+    fn frigate_coming_back_is_detected() {
+        let (_, f, _) = setup(true);
+        assert!(f.back_online("frigate/available", "online"));
+        assert!(f.back_online("frigate/available", " online\n"));
+        assert!(!f.back_online("frigate/available", "offline"));
+        assert!(!f.back_online("frigate/chambre/person", "online"));
     }
 
     #[test]

@@ -172,6 +172,28 @@ L'inventaire (08 §3) montre que les ESP32 **attendent le comportement complet d
 
 **Contrainte de bascule** : un ESP accepte plusieurs clients API, mais ses `HomeassistantServiceCall` et `tag_scanned` partent vers **tous** les clients connectés. Le risque est un armement double. Un nœud donné est donc relié **soit à HA, soit au clone**, jamais aux deux. Pour en changer, on supprime le nœud de HA et on l'ajoute au clone.
 
+### 5.3 bis ESPHome Builder : gestion des projets (décision du 2026-10-18)
+
+Hugo veut dans RustHome les fonctions du panneau ESPHome de HA : liste des projets, création, édition, suppression, compilation, flash et logs, en USB comme en Wi-Fi. **Option A retenue** : interface RustHome native, compilation déléguée.
+
+- **Moteur** : le conteneur officiel `ghcr.io/esphome/esphome` (même version que l'add-on de HA, 2026.9.1 au départ) tourne à côté du clone, sur un réseau Docker privé, sans port publié. RustHome le pilote par son API WebSocket multiplexée `/ws` (`devices/*`, `firmware/*`, `config/*`). La chaîne Python/PlatformIO n'est **pas** réécrite en Rust : c'est l'application de la dépendance conservée « ESPHome Builder » (§1, point 4).
+- **Interface** : la page ESPHome de RustHome (en français, droits RustHome) liste les projets, ouvre l'éditeur YAML (validation par le Builder), crée et supprime des cartes, lance compilation et installation avec la progression en direct.
+- **Wi-Fi** : installation OTA et logs par le Builder.
+- **USB** : depuis le navigateur, en Web Serial (Chrome ou Edge, contexte sécurisé), comme « Brancher sur cet ordinateur » dans HA : le firmware compilé est servi par RustHome, la carte se branche sur le poste de l'utilisateur. Pas de passage USB vers Docker.
+- **Projets existants** : importés par copie des YAML de `/config/esphome` de HA (lecture seule côté HA). Un projet est géré **soit** par l'ESPHome de HA, **soit** par RustHome : on bascule projet par projet, comme les automatisations.
+- **Secrets** : `secrets.yaml` reste dans le dossier de données du Builder (volume du serveur), jamais dans le dépôt ni dans les réponses de l'API RustHome (seuls les noms des clés sont exposés).
+- **Garde-fous** :
+  - les nœuds de l'alarme (`lecteur-alarme`, `tag-reader`) sont **verrouillés** : code lisible, mais installation, OTA et logs en direct refusés par le backend tant que la phase de reprise de l'alarme n'est pas validée par Hugo (liste `RUSTHOME_ESPHOME_LOCKED`) ;
+  - pendant le développement, le flash ne vise que le banc (`test-nfc` ou un ESP de rechange) ; les autres cartes (boîtier IR…) s'ouvrent sur décision de Hugo ;
+  - accès réservé aux administrateurs.
+- **État (2026-10-18)** : livré (crate `rusthome-esphome`, API `/api/v1/esphome/*`, pages `/esphome`). Précisions issues de l'implémentation :
+  - RustHome n'envoie **jamais** `subscribe_events` : cette commande active les sondes du Builder (ping, connexions API native aux cartes). Listes et états sont lus à la demande ;
+  - l'installation sans fil enchaîne `firmware/compile` puis `firmware/upload` ; `firmware/install` est évité, car il programme un flash automatique d'une carte hors ligne à son retour ;
+  - installation sans fil et logs ne visent **que** l'adresse configurée du projet (`RUSTHOME_ESPHOME_ADDRESSES=projet@ip`) : jamais une adresse saisie, un nom `.local` (irrésoluble depuis Docker de toute façon) ni un `use_address`, qui pourraient viser un nœud de l'alarme ; une adresse pour un nœud verrouillé est refusée au démarrage (revue du 2026-10-18, n° 2) ;
+  - le Builder lance tout seul `esphome compile --only-generate` sur les YAML nouveaux ou modifiés, et versionne le dossier des projets avec git (`secrets.yaml` exclu) ;
+  - un YAML avec un bloc `mqtt:` ferait publier le Builder sur ce broker : aucun projet actuel n'en a ;
+  - la puce du manifeste USB est lue dans l'en-tête du firmware (`config/get_info` du Builder 1.14.9 échoue à sérialiser sa réponse).
+
 ### 5.4 HomeKit (Netatmo)
 
 - Appairage HAP sur IP avec le code d'installation. Le thermostat accepte plusieurs contrôleurs, mais l'ajout d'un appairage passe par un contrôleur admin.
@@ -358,7 +380,7 @@ Elle remplace Alarmo. Les exigences viennent de 07 et de 02 §9.
 | **M3 : moteur** | Automatisations v1, traces, import des 44 automatisations, éditeur YAML | Les automatisations Awtrix tournent dans le clone |
 | **M4 : dashboards** | Cartes P0 + P1, import Lovelace, éditeur visuel de dashboards, profil NsPanel | Dashboard Sécurité dans le clone |
 | **M5 : éditeur visuel d'automatisations, gestion Zigbee** | Éditeur à blocs, appairage, renommage, OTA | – |
-| **M6 : ESPHome, HomeKit, notifications** | Client API native complet, HAP, ntfy, Alexa, présence | Lecteur v1 piloté par le clone (banc de test) |
+| **M6 : ESPHome, HomeKit, notifications** | Gestion des projets ESPHome par le Builder (§5.3 bis), client API native complet, HAP, ntfy, Alexa, présence | Lecteur v1 piloté par le clone (banc de test) |
 | **M7 : alarme** | Centrale native, observation, puis bascule | Phase P5 |
 | **M8 : intégrations étendues** | Médias, salon, infos, réseau, NAS (25 intégrations, cf. [integrations.md](integrations.md)) | Dashboards Aperçu et Monitoring entièrement natifs |
 | **M9 : cloud non officiel, BLE, divers** | PSN, Tile, Waze, proxies Bluetooth (Oral-B, iBeacon), Epson, Yamaha, éclairage adaptatif | Arrêt de HA possible sans perte (phase P6) |

@@ -2395,6 +2395,7 @@ dependencies = [
  "rusthome-automation",
  "rusthome-core",
  "rusthome-dashboard",
+ "rusthome-esphome",
  "rusthome-frigate",
  "rusthome-ha-bridge",
  "rusthome-hue",
@@ -2430,6 +2431,7 @@ dependencies = [
  "rusthome-automation",
  "rusthome-core",
  "rusthome-dashboard",
+ "rusthome-esphome",
  "rusthome-frigate",
  "rusthome-ha-bridge",
  "rusthome-model",
@@ -2486,6 +2488,21 @@ version = "0.1.0"
 dependencies = [
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "rusthome-esphome"
+version = "0.1.0"
+dependencies = [
+ "futures-util",
+ "reqwest 0.13.5",
+ "serde_json",
+ "serde_yaml",
+ "thiserror 2.0.21",
+ "tokio",
+ "tokio-tungstenite 0.30.0",
+ "tracing",
+ "url",
 ]
 
 [[package]]

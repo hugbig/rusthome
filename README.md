@@ -19,7 +19,8 @@ Domotique maison en <strong>Rust</strong> et <strong>Svelte 5</strong>, pensée 
 | **M3** : automatisations | Import des automatisations HA (blueprints compris, `device_id` traduits), moteur (déclencheurs, conditions, actions, modes), traces, éditeur YAML | ✅ |
 | **M4** : dashboards et interface | Import Lovelace (Mushroom, Bubble, tempometer, Emby, agendas, Spotify… convertis en cartes natives, aucune carte non supportée sur les tableaux réels), éditeur façon HA (vues, sections, grille 12 colonnes, glisser-déposer, formulaires par carte et sous-cartes, sélecteur d'icônes, YAML), tableau par défaut ouvert à l'accueil, onglets réduits à l'icône, mode kiosque, menu latéral (tableaux, Vue d'ensemble, Énergie, Carte, Journal, Historique, Média, Alarme, ESPHome, Zigbee2MQTT), Paramètres et profil, thème clair/sombre avec interrupteurs et curseurs façon HA, météo avec prévisions, commande des lumières (couleur, blanc, luminosité), navigateur média (caméras, clips, instantanés et enregistrements Frigate lus en HLS, médias de HA) | ✅ |
 | **M5** : éditeur visuel et Zigbee | Éditeur visuel des automatisations (blocs imbriqués, synchronisé avec le YAML) ; gestion Zigbee2MQTT : appairage, renommage avec propagation des entity_id, mises à jour OTA, groupes, liaisons | ✅ (carte du réseau à venir) |
-| M6 à M9 | ESPHome, HomeKit, alarme, autres intégrations | à venir |
+| **M6** : ESPHome, HomeKit, notifications | **Fait** : gestion des projets ESPHome par le conteneur ESPHome Builder (liste, création, import, éditeur YAML vérifié à la frappe, secrets, validation, compilation, installation sans fil ou USB depuis le navigateur, logs Wi-Fi ou USB ; nœuds de l'alarme verrouillés). **À venir** : client API native (rôle de hub), HomeKit, ntfy, Alexa, présence | en cours |
+| M7 à M9 | Alarme, autres intégrations | à venir |
 
 Le détail est dans [docs/architecture.md](docs/architecture.md) (§13 pour les jalons, §9 pour les phases de migration) et dans [docs/integrations.md](docs/integrations.md).
 
@@ -47,6 +48,7 @@ crates/
   rusthome-hue        Philips Hue (CLIP v2, flux d'événements)
   rusthome-portainer  supervision des conteneurs Docker
   rusthome-frigate    Frigate (caméras, détection)
+  rusthome-esphome    projets ESPHome via ESPHome Builder (client /ws, règles d'accès)
   rusthome-automation moteur d'automatisations (import HA, exécution, traces)
   rusthome-dashboard  dashboards (import Lovelace, cartes natives, validateur de références)
   rusthome-api        API REST + WebSocket, OIDC
@@ -89,6 +91,7 @@ Tout passe par des variables d'environnement, documentées dans [.env.example](.
 - Portainer : `RUSTHOME_PORTAINER_*` ;
 - authentification : `RUSTHOME_AUTH`, `RUSTHOME_OIDC_*` (voir [docs/authelia.md](docs/authelia.md)) ;
 - blueprints HA à développer à l'import : `RUSTHOME_BLUEPRINTS_DIR` (défaut `var/blueprints`) ;
+- ESPHome Builder : `RUSTHOME_ESPHOME_URL`, `RUSTHOME_ESPHOME_LOCKED` (défaut : nœuds de l'alarme, en lecture seule), `RUSTHOME_ESPHOME_FLASHABLE` (défaut : le banc `test-nfc`, seul installable sans fil), `RUSTHOME_ESPHOME_ADDRESSES` (`projet@ip` : seule adresse jointe en Wi-Fi, jamais pour l'alarme) ;
 - tableau imposé à la tablette murale (comptes `display`) : `RUSTHOME_DISPLAY_DASHBOARD`.
 
 Le tableau ouvert à l'accueil (`/`) se choisit dans l'interface (menu ⋮ du tableau, compte admin) et s'enregistre dans la base ; sans choix, `/` affiche la vue d'ensemble.
@@ -101,6 +104,7 @@ Les secrets restent dans `.env`, qui n'est jamais versionné.
 - [docs/integrations.md](docs/integrations.md) : catalogue des intégrations, effort et jalon de chacune
 - [docs/authelia.md](docs/authelia.md) : connexion via Authelia
 - [AGENTS.md](AGENTS.md) : règles de développement (tests, lint, sécurité, git)
+- [docs/revue-2026-10-18.md](docs/revue-2026-10-18.md) : suivi de la revue de code complète
 
 L'inventaire de l'installation d'origine (`inventaire/`) reste local et n'est pas versionné, car il décrit la maison.
 

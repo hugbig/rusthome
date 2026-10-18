@@ -19,7 +19,8 @@ export default defineConfig({
 	],
 	server: {
 		proxy: {
-			'/api': { target: backend, ws: true, changeOrigin: true }
+			// Host conservé : l'API refuse les WebSocket d'une autre origine.
+			'/api': { target: backend, ws: true, changeOrigin: false }
 		}
 	},
 	resolve: process.env.VITEST ? { conditions: ['browser'] } : undefined,
