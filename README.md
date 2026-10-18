@@ -17,7 +17,7 @@ Domotique maison en <strong>Rust</strong> et <strong>Svelte 5</strong>, pensée 
 | **M1** : cœur | Modèle, registres (pièces, appareils, entités), états, historique SQLite, API REST + WebSocket, connexion Authelia (OIDC), miroir de Home Assistant en lecture seule, interface de consultation | ✅ |
 | **M2** : intégrations natives | Zigbee2MQTT, Philips Hue, Portainer, Frigate. Les `entity_id` de HA sont repris à l'identique | ✅ (HomeKit reporté) |
 | **M3** : automatisations | Import des automatisations HA (blueprints compris, `device_id` traduits), moteur (déclencheurs, conditions, actions, modes), traces, éditeur YAML | ✅ |
-| **M4** : dashboards et interface | Import Lovelace (Mushroom, Bubble, tempometer, Emby, agendas, Spotify… convertis en cartes natives, aucune carte non supportée sur les tableaux réels), éditeur façon HA (vues, sections, grille 12 colonnes, glisser-déposer, formulaires par carte et sous-cartes, YAML), mode kiosque, menu latéral (tableaux, Énergie, Carte, Journal, Historique, Média, Alarme, ESPHome, Zigbee2MQTT), Paramètres et profil, thème clair/sombre soigné, météo avec prévisions, commande des lumières (couleur, blanc, luminosité) | ✅ |
+| **M4** : dashboards et interface | Import Lovelace (Mushroom, Bubble, tempometer, Emby, agendas, Spotify… convertis en cartes natives, aucune carte non supportée sur les tableaux réels), éditeur façon HA (vues, sections, grille 12 colonnes, glisser-déposer, formulaires par carte et sous-cartes, sélecteur d'icônes, YAML), tableau par défaut ouvert à l'accueil, onglets réduits à l'icône, mode kiosque, menu latéral (tableaux, Vue d'ensemble, Énergie, Carte, Journal, Historique, Média, Alarme, ESPHome, Zigbee2MQTT), Paramètres et profil, thème clair/sombre avec interrupteurs et curseurs façon HA, météo avec prévisions, commande des lumières (couleur, blanc, luminosité), navigateur média (caméras, clips, instantanés et enregistrements Frigate lus en HLS, médias de HA) | ✅ |
 | **M5** : éditeur visuel et Zigbee | Éditeur visuel des automatisations (blocs imbriqués, synchronisé avec le YAML) ; gestion Zigbee2MQTT : appairage, renommage avec propagation des entity_id, mises à jour OTA, groupes, liaisons | ✅ (carte du réseau à venir) |
 | M6 à M9 | ESPHome, HomeKit, alarme, autres intégrations | à venir |
 
@@ -28,7 +28,7 @@ Le détail est dans [docs/architecture.md](docs/architecture.md) (§13 pour les 
 - **Migration progressive.** RustHome tourne à côté de Home Assistant. Il lit d'abord HA, puis reprend les sources une à une, en conservant les mêmes `entity_id`. Les automatisations et dashboards existants restent ainsi valides.
 - **Lecture seule par défaut.** Pendant le développement, RustHome ne commande aucun appareil réel : MQTT et Hue sont en lecture seule, Portainer ne sait faire que des GET, et le pont HA ne peut pas appeler de service. Chaque bascule se fait explicitement, phase par phase.
 - **Dashboards importés à l'identique.** Les dashboards HA sont repris avec leurs vues et leurs cartes ; une carte sans équivalent reste visible comme « non supportée », sa configuration d'origine est conservée.
-- **Automatisations importées désactivées.** Les automatisations reprises de HA arrivent désactivées et s'activent une par une. Même activés, ils ne peuvent rien piloter tant que les intégrations restent en lecture seule.
+- **Automatisations importées désactivées.** Les automatisations reprises de HA arrivent désactivées et s'activent une par une. Même activées, elles ne peuvent rien piloter tant que les intégrations restent en lecture seule.
 - **Une seule source par entité.** Une entité reprise par une intégration native n'est plus écrasée par le miroir HA.
 - **Qualité.** Tests unitaires obligatoires, `clippy` en mode strict, types TypeScript générés depuis Rust. `just check` doit passer avant tout commit.
 
@@ -90,6 +90,8 @@ Tout passe par des variables d'environnement, documentées dans [.env.example](.
 - authentification : `RUSTHOME_AUTH`, `RUSTHOME_OIDC_*` (voir [docs/authelia.md](docs/authelia.md)) ;
 - blueprints HA à développer à l'import : `RUSTHOME_BLUEPRINTS_DIR` (défaut `var/blueprints`) ;
 - tableau imposé à la tablette murale (comptes `display`) : `RUSTHOME_DISPLAY_DASHBOARD`.
+
+Le tableau ouvert à l'accueil (`/`) se choisit dans l'interface (menu ⋮ du tableau, compte admin) et s'enregistre dans la base ; sans choix, `/` affiche la vue d'ensemble.
 
 Les secrets restent dans `.env`, qui n'est jamais versionné.
 

@@ -24,7 +24,10 @@
 
 	let { onnavigate }: { onnavigate?: () => void } = $props();
 
+	// La vue d'ensemble n'est pas un tableau paramétrable : elle va avec les
+	// panneaux, pas avec les tableaux.
 	const panels = [
+		{ href: resolve('/apercu'), label: 'Vue d’ensemble', icon: mdiViewGridOutline },
 		{ href: resolve('/energie'), label: 'Énergie', icon: mdiLightningBolt },
 		{ href: resolve('/carte'), label: 'Carte', icon: mdiMap },
 		{ href: resolve('/journal'), label: 'Journal', icon: mdiFormatListBulletedType },
@@ -38,8 +41,7 @@
 	const settings = resolve('/parametres');
 	const profile = resolve('/profil');
 	const path = $derived(page.url.pathname);
-	const isActive = (href: string) =>
-		href === home ? path === href : path === href || path.startsWith(`${href}/`);
+	const isActive = (href: string) => path === href || path.startsWith(`${href}/`);
 	// Les pages de configuration existantes relèvent de Paramètres.
 	const inSettings = $derived(
 		['/parametres', '/entites', '/appareils', '/pieces', '/automatisations', '/tableaux'].some(
@@ -58,11 +60,6 @@
 	</a>
 
 	<ul>
-		<li>
-			<a href={home} onclick={onnavigate} aria-current={isActive(home) ? 'page' : undefined}>
-				<Icon path={mdiViewGridOutline} size={22} /><span>Aperçu</span>
-			</a>
-		</li>
 		{#each dashboards.sidebar as d (d.url_path)}
 			{@const href = dashHref(d.url_path)}
 			<li>

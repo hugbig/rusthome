@@ -8,6 +8,8 @@
 		mdiCodeBraces,
 		mdiCog,
 		mdiFullscreen,
+		mdiHomeImportOutline,
+		mdiHomeRemoveOutline,
 		mdiPencil,
 		mdiPlus,
 		mdiRefresh
@@ -264,6 +266,14 @@
 		} else saveError = r.error;
 	}
 
+	// Tableau ouvert à l'adresse « / » (pour tous les comptes qui le voient).
+	const isDefault = $derived(session.me?.default_dashboard === urlPath);
+	async function setDefault(url_path: string | null) {
+		const r = await request('PUT', 'settings/default-dashboard', { url_path });
+		if (r.ok && session.me) session.me.default_dashboard = url_path;
+		else if (!r.ok) saveError = r.error;
+	}
+
 	const viewMenu = $derived([
 		...(data?.editable
 			? [{ label: 'Modifier le tableau de bord', icon: mdiPencil, onclick: () => (editing = true) }]
@@ -282,8 +292,24 @@
 				void goto(`${viewHref(viewIndex)}?kiosk`);
 			}
 		},
+		...(isAdmin
+			? [
+					isDefault
+						? {
+								label: 'Ne plus ouvrir à l’accueil',
+								icon: mdiHomeRemoveOutline,
+								onclick: () => void setDefault(null)
+							}
+						: {
+								label: 'Ouvrir à l’accueil (tableau par défaut)',
+								icon: mdiHomeImportOutline,
+								onclick: () => void setDefault(urlPath)
+							}
+				]
+			: []),
 		{ label: 'Actualiser', icon: mdiRefresh, onclick: () => void load() }
 	]);
+
 	const editMenu = $derived([
 		{ label: 'Réglages du tableau', icon: mdiCog, onclick: () => (settingsOpen = true) },
 		{
@@ -344,9 +370,16 @@
 			<nav class="tabs" aria-label="Vues">
 				{#each doc.views as v, i (i)}
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- viewHref passe par resolve() -->
-					<a href={viewHref(i)} aria-current={i === viewIndex ? 'page' : undefined}>
+					<a
+						href={viewHref(i)}
+						aria-current={i === viewIndex ? 'page' : undefined}
+						title={v.title}
+						aria-label={v.title ?? `Vue ${i + 1}`}
+					>
 						{#if v.icon}<Icon path={iconPath(v.icon)} size={18} />{/if}
-						{#if v.title || !v.icon}<span>{v.title ?? `Vue ${i + 1}`}</span>{/if}
+						<!-- icône seule si le tableau le demande (titre en info-bulle) -->
+						{#if !v.icon || (v.title && !doc.tabs_icon_only)}<span>{v.title ?? `Vue ${i + 1}`}</span
+							>{/if}
 					</a>
 					{#if editing && i === viewIndex}
 						<span class="vtools">

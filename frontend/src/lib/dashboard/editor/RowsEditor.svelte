@@ -1,8 +1,9 @@
 <script lang="ts">
-	// Lignes d'une carte « Entités » : entité (avec nom, curseur, interrupteur)
+	// Lignes d'une carte « Entités » : entité (avec nom, icône, curseur, interrupteur)
 	// ou séparateur ; réordonnables.
 	import EntityPicker from '../../components/EntityPicker.svelte';
 	import Icon from '../Icon.svelte';
+	import IconPicker from './IconPicker.svelte';
 	import { UI } from '../icons';
 	import type { Card } from '../model';
 
@@ -57,6 +58,11 @@
 					value={typeof r.name === 'string' ? r.name : ''}
 					placeholder="Nom (facultatif)"
 					oninput={(e) => patch(i, { name: e.currentTarget.value })}
+				/>
+				<IconPicker
+					value={typeof r.icon === 'string' ? r.icon : undefined}
+					entityId={r.entity}
+					onchange={(v) => patch(i, { icon: v ?? '' })}
 				/>
 				<div class="opts">
 					<label

@@ -1,6 +1,6 @@
 <script lang="ts">
-	// Tuile : une entité, son état et une commande rapide. Les lumières prennent
-	// leur couleur ; les mesures (température, pression, puissance…) s'affichent
+	// Tuile : une entité, son état et une commande rapide. Seule l'icône prend
+	// la couleur des lumières (interrupteur et curseur restent neutres) ; les mesures (température, pression, puissance…) s'affichent
 	// en grand avec leur courbe des dernières 24 h.
 	import { domainOf } from '../../format';
 	import { live } from '../../stores/live.svelte';
@@ -17,6 +17,7 @@
 		type Card
 	} from '../model';
 	import { call, run } from '../runtime.svelte';
+	import ControlSlider from '../ControlSlider.svelte';
 	import Sparkline from '../Sparkline.svelte';
 
 	let { card }: { card: Card } = $props();
@@ -74,9 +75,8 @@
 		const option = (e.currentTarget as HTMLSelectElement).value;
 		void call(`${domainOf(card.entity)}.select_option`, { entity_id: card.entity, option });
 	}
-	function setBrightness(e: Event) {
+	function setBrightness(v: number) {
 		if (!card.entity) return;
-		const v = Number((e.currentTarget as HTMLInputElement).value);
 		void call(v === 0 ? 'light.turn_off' : 'light.turn_on', {
 			entity_id: card.entity,
 			...(v === 0 ? {} : { brightness_pct: v })
@@ -134,23 +134,16 @@
 				<button
 					class="dswitch"
 					role="switch"
-					style:--switch-color={accent}
 					aria-checked={s?.state === 'on'}
 					aria-label="Basculer {cardName(card, s)}"
 					onclick={() => run({ action: 'toggle' }, card.entity)}
 				></button>
 			</div>
 		{:else if f.type === 'light-brightness' && card.entity}
-			<input
-				class="bright"
-				type="range"
-				min="0"
-				max="100"
+			<ControlSlider
 				value={brightness ?? 0}
-				style:--val="{brightness ?? 0}%"
-				style:--fill={accent ?? 'var(--primary)'}
+				label="Luminosité de {cardName(card, s)}"
 				onchange={setBrightness}
-				aria-label="Luminosité de {cardName(card, s)}"
 			/>
 		{:else if f.type === 'select-options' && options.length}
 			<select class="feature" value={s?.state} onchange={select} aria-label={cardName(card, s)}>
@@ -167,9 +160,6 @@
 		gap: 8px;
 		padding: 10px 12px;
 		transition: border-color 0.2s;
-	}
-	.tile.active {
-		border-color: color-mix(in srgb, var(--accent, var(--primary)) 30%, var(--border));
 	}
 	.main {
 		display: flex;
@@ -269,9 +259,6 @@
 	.feature {
 		display: flex;
 		justify-content: flex-end;
-	}
-	.bright {
-		width: 100%;
 	}
 	select.feature {
 		padding: 6px 8px;

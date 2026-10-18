@@ -225,6 +225,11 @@ async fn start_dashboards(recorder: &Recorder) -> anyhow::Result<Arc<rusthome_da
     for doc in recorder.load_dashboards().await? {
         store.put(doc);
     }
+    store.set_default(
+        recorder
+            .setting(rusthome_api::DEFAULT_DASHBOARD_KEY)
+            .await?,
+    );
     tracing::info!(loaded = store.list().len(), "dashboards loaded");
     Ok(store)
 }

@@ -3,9 +3,10 @@
 	// produit une nouvelle carte (onchange) ; un champ vidé disparaît du YAML.
 	import EntityPicker from '../../components/EntityPicker.svelte';
 	import Icon from '../Icon.svelte';
-	import { iconPath, UI } from '../icons';
+	import { UI } from '../icons';
 	import type { Action, Card } from '../model';
 	import { ACTIONS, ALARM_MODES, CARD_INFO, type Field } from './catalog';
+	import IconPicker from './IconPicker.svelte';
 	import RowsEditor from './RowsEditor.svelte';
 	import SubCards from './SubCards.svelte';
 
@@ -101,17 +102,12 @@
 			/></label
 		>
 	{:else if f.kind === 'icon'}
-		<label>
-			<span class="lbl">{f.label}</span>
-			<span class="iconrow">
-				<span class="preview"><Icon path={iconPath(card[f.key], card.entity)} size={20} /></span>
-				<input
-					value={str(card[f.key])}
-					placeholder="mdi:lightbulb"
-					oninput={(e) => set(f.key, e.currentTarget.value)}
-				/>
-			</span>
-		</label>
+		<IconPicker
+			label={f.label}
+			value={str(card[f.key]) || undefined}
+			entityId={card.entity}
+			onchange={(v) => set(f.key, v)}
+		/>
 	{:else if f.kind === 'number'}
 		<label
 			><span class="lbl">{f.label}</span><input
@@ -315,22 +311,6 @@
 		flex-direction: row;
 		align-items: center;
 		gap: 8px;
-	}
-	.iconrow {
-		display: flex;
-		gap: 8px;
-		align-items: center;
-	}
-	.iconrow input {
-		flex: 1;
-	}
-	.preview {
-		display: grid;
-		place-items: center;
-		width: 36px;
-		height: 36px;
-		border-radius: 8px;
-		background: var(--surface-2);
 	}
 	.line {
 		display: flex;

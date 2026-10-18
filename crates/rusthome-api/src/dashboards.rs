@@ -176,6 +176,46 @@ pub(crate) async fn put_one(
     ))
 }
 
+#[derive(Deserialize)]
+pub(crate) struct DefaultBody {
+    url_path: Option<String>,
+}
+
+/// Dashboard opened at `/` for everyone (admins only), or none: `/` then
+/// shows the overview.
+pub(crate) async fn set_default(
+    AxState(s): AxState<ApiState>,
+    axum::Extension(user): axum::Extension<User>,
+    Json(body): Json<DefaultBody>,
+) -> Result<Json<Value>, ApiError> {
+    let c = ctx(&s)?;
+    if user.role != Role::Admin {
+        return Err(ApiError::Forbidden(
+            "only admins choose the default dashboard".into(),
+        ));
+    }
+    if let Some(p) = &body.url_path
+        && !c.store.contains(p)
+    {
+        return Err(ApiError::NotFound(format!("unknown dashboard {p}")));
+    }
+    if let Some(rec) = &s.recorder {
+        rec.set_setting(crate::DEFAULT_DASHBOARD_KEY, body.url_path.as_deref())
+            .await
+            .map_err(|e| ApiError::Internal(e.to_string()))?;
+    }
+    c.store.set_default(body.url_path.clone());
+    Ok(Json(json!({ "default_dashboard": body.url_path })))
+}
+
+/// The default dashboard, if this account may see it.
+pub(crate) fn default_for(s: &ApiState, user: &User) -> Option<String> {
+    let c = s.dashboards.as_ref()?;
+    let d = c.store.default_dashboard()?;
+    let sum = Summary::of(&c.store.get(&d)?);
+    visible(s, user, &sum).then_some(d)
+}
+
 pub(crate) async fn create(
     AxState(s): AxState<ApiState>,
     axum::Extension(user): axum::Extension<User>,

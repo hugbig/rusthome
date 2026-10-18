@@ -77,7 +77,7 @@
 			<p class="banner">Registres indisponibles : {registry.error}</p>
 		{/if}
 
-		<main class:kiosk={ui.kiosk}>
+		<main class:kiosk={ui.kiosk} class:wide={page.url.pathname.startsWith('/tableaux/')}>
 			{#if session.status === 'anonymous'}
 				<section class="card login">
 					<h1>Connexion requise</h1>
@@ -199,6 +199,12 @@
 		max-width: 1300px;
 		margin: 0 auto;
 		padding: 16px;
+	}
+	/* Tableaux : toute la largeur, comme HA (les colonnes se multiplient avec
+	   l'écran), marges latérales réduites. */
+	main.wide {
+		max-width: none;
+		padding: 12px 12px 16px;
 	}
 	main.kiosk {
 		max-width: none;

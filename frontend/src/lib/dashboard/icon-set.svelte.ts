@@ -15,7 +15,13 @@ class IconSet {
 	}
 
 	load() {
-		if (this.#loading || typeof window === 'undefined' || typeof fetch === 'undefined') return;
+		if (
+			this.paths ||
+			this.#loading ||
+			typeof window === 'undefined' ||
+			typeof fetch === 'undefined'
+		)
+			return;
 		this.#loading = true;
 		fetch('/icons/mdi.json')
 			.then((r) => (r.ok ? (r.json() as Promise<Record<string, string>>) : Promise.reject()))

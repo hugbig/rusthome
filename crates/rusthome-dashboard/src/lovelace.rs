@@ -654,6 +654,8 @@ pub fn dashboard(meta: &Value, config: &Value) -> (Value, Vec<Issue>) {
         "icon",
         "show_in_sidebar",
         "require_admin",
+        // RustHome: tabs show their icon only (the title stays as tooltip)
+        "tabs_icon_only",
     ] {
         if let Some(v) = pref(k) {
             out.insert(k.into(), v);
@@ -825,5 +827,14 @@ mod tests {
         assert_eq!(d["url_path"], "dashboard-nspanel");
         assert_eq!(d["views"][0]["type"], "masonry");
         assert_eq!(d["views"][0]["max_columns"], 1);
+    }
+
+    #[test]
+    fn tabs_icon_only_is_kept() {
+        let (d, _) = dashboard(
+            &json!({ "url_path": "apercu-3" }),
+            &json!({ "tabs_icon_only": true, "views": [] }),
+        );
+        assert_eq!(d["tabs_icon_only"], true);
     }
 }

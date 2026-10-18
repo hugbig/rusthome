@@ -165,3 +165,21 @@ export function iconPath(name: unknown, entityId?: string, deviceClass?: unknown
 		return BY_DEVICE_CLASS[deviceClass];
 	return (entityId ? BY_DOMAIN[domainOf(entityId)] : undefined) ?? mdiHelpCircleOutline;
 }
+
+/**
+ * Noms d'icônes (`sofa-outline`…) correspondant à une recherche : tous les
+ * mots doivent apparaître ; les noms qui commencent par la recherche d'abord,
+ * puis les plus courts. Renvoie des noms `mdi:…`.
+ */
+export function searchIcons(names: Iterable<string>, query: string, limit = 60): string[] {
+	const q = query.trim().toLowerCase().replace(/^mdi:/, '');
+	const words = q.split(/[\s-]+/).filter(Boolean);
+	if (!words.length) return [];
+	const hits: string[] = [];
+	for (const n of names) if (words.every((w) => n.includes(w))) hits.push(n);
+	const rank = (n: string) => (n === q ? 0 : n.startsWith(q) ? 1 : 2);
+	return hits
+		.sort((a, b) => rank(a) - rank(b) || a.length - b.length || a.localeCompare(b))
+		.slice(0, limit)
+		.map((n) => `mdi:${n}`);
+}

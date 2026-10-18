@@ -92,6 +92,10 @@ pub fn router(state: ApiState, static_dir: Option<PathBuf>) -> Router {
             get(dashboards::list).post(dashboards::create),
         )
         .route(
+            "/settings/default-dashboard",
+            axum::routing::put(dashboards::set_default),
+        )
+        .route(
             "/dashboards/import-ha",
             axum::routing::post(dashboards::import_ha),
         )
@@ -200,7 +204,11 @@ async fn system(AxState(s): AxState<ApiState>) -> Json<serde_json::Value> {
     }))
 }
 
-/// The current user; `home` is the dashboard a `display` account is held to.
+/// Settings key of the default dashboard.
+pub const DEFAULT_DASHBOARD_KEY: &str = "default_dashboard";
+
+/// The current user; `home` is the dashboard a `display` account is held to,
+/// `default_dashboard` the one opened at `/`.
 async fn me(
     AxState(s): AxState<ApiState>,
     axum::Extension(user): axum::Extension<User>,
@@ -208,7 +216,10 @@ async fn me(
     let home = (user.role == Role::Display)
         .then(|| s.display_dashboard.clone())
         .flatten();
-    Json(json!({ "name": user.name, "role": user.role, "home": home }))
+    let default_dashboard = dashboards::default_for(&s, &user);
+    Json(json!({
+        "name": user.name, "role": user.role, "home": home, "default_dashboard": default_dashboard
+    }))
 }
 
 async fn states(AxState(s): AxState<ApiState>) -> Json<serde_json::Value> {

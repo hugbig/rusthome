@@ -47,6 +47,8 @@ export interface DashboardDoc {
 	show_in_sidebar?: boolean;
 	require_admin?: boolean;
 	kiosk?: boolean;
+	/** Onglets réduits à leur icône (le titre reste en info-bulle). */
+	tabs_icon_only?: boolean;
 	views: View[];
 }
 

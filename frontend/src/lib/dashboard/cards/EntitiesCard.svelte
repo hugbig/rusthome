@@ -3,7 +3,15 @@
 	import { live } from '../../stores/live.svelte';
 	import Icon from '../Icon.svelte';
 	import { iconPath } from '../icons';
-	import { cardName, entityColor, formatState, isToggleable, tapAction, type Card } from '../model';
+	import {
+		cardName,
+		entityColor,
+		formatState,
+		isActive,
+		isToggleable,
+		tapAction,
+		type Card
+	} from '../model';
 	import { call, run } from '../runtime.svelte';
 
 	let { card }: { card: Card } = $props();
@@ -66,7 +74,7 @@
 				{@const s = row.entity ? live.states.get(row.entity) : undefined}
 				<li class:slider={row.slider === true}>
 					<button class="who" onclick={() => run(tapAction(row), row.entity)}>
-						<span class="dicon"
+						<span class="dicon" class:on={isActive(s)} style:--accent={entityColor(s)}
 							><Icon
 								path={iconPath(row.icon, row.entity, s?.attributes.device_class)}
 								size={20}
@@ -85,14 +93,12 @@
 							step={sv.step}
 							value={sv.value}
 							style:--val="{((sv.value - sv.min) / (sv.max - sv.min || 1)) * 100}%"
-							style:--fill={entityColor(s) ?? 'var(--primary)'}
 							onchange={(e) => slide(row, e)}
 							aria-label="Niveau {cardName(row, s)}"
 						/>
 						{#if row.toggle === true && row.entity}
 							<button
 								class="dswitch"
-								style:--switch-color={entityColor(s)}
 								role="switch"
 								aria-checked={s.state === 'on'}
 								aria-label="Basculer {cardName(row, s)}"
@@ -102,7 +108,6 @@
 					{:else if row.entity && isToggleable(row.entity) && s && ['on', 'off'].includes(s.state)}
 						<button
 							class="dswitch"
-							style:--switch-color={entityColor(s)}
 							role="switch"
 							aria-checked={s.state === 'on'}
 							aria-label="Basculer {cardName(row, s)}"
@@ -134,6 +139,11 @@
 	}
 	li.slider {
 		flex-wrap: wrap;
+		column-gap: 12px;
+	}
+	/* Le nom garde au moins un tiers de la ligne ; sinon le curseur passe dessous. */
+	li.slider .who {
+		flex: 1 0 34%;
 	}
 	.who {
 		display: flex;
@@ -161,7 +171,6 @@
 	}
 	input[type='range'] {
 		flex: 1 1 120px;
-		accent-color: var(--primary);
 	}
 	.divider {
 		min-height: 0;

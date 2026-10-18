@@ -204,6 +204,39 @@ impl Recorder {
             .collect()
     }
 
+    // ---------- settings ----------
+
+    pub async fn setting(&self, key: &str) -> Result<Option<String>, RecorderError> {
+        let row = sqlx::query("SELECT value FROM settings WHERE key = ?")
+            .bind(key)
+            .fetch_optional(&self.pool)
+            .await?;
+        Ok(row.map(|r| r.get::<String, _>("value")))
+    }
+
+    /// Sets a setting, or removes it with `None`.
+    pub async fn set_setting(&self, key: &str, value: Option<&str>) -> Result<(), RecorderError> {
+        match value {
+            Some(v) => {
+                sqlx::query(
+                    "INSERT INTO settings (key, value) VALUES (?, ?)
+                     ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+                )
+                .bind(key)
+                .bind(v)
+                .execute(&self.pool)
+                .await?;
+            }
+            None => {
+                sqlx::query("DELETE FROM settings WHERE key = ?")
+                    .bind(key)
+                    .execute(&self.pool)
+                    .await?;
+            }
+        }
+        Ok(())
+    }
+
     // ---------- dashboards ----------
 
     pub async fn save_dashboard(
@@ -485,6 +518,24 @@ mod tests {
         }
         task.abort();
         assert_eq!(fresh.areas().len(), 50);
+    }
+
+    #[tokio::test]
+    async fn settings_round_trip() {
+        let rec = mem().await;
+        assert_eq!(rec.setting("default_dashboard").await.unwrap(), None);
+        rec.set_setting("default_dashboard", Some("apercu-2"))
+            .await
+            .unwrap();
+        rec.set_setting("default_dashboard", Some("apercu-3"))
+            .await
+            .unwrap();
+        assert_eq!(
+            rec.setting("default_dashboard").await.unwrap().as_deref(),
+            Some("apercu-3")
+        );
+        rec.set_setting("default_dashboard", None).await.unwrap();
+        assert_eq!(rec.setting("default_dashboard").await.unwrap(), None);
     }
 
     #[tokio::test]

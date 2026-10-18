@@ -63,6 +63,8 @@ impl Summary {
 #[derive(Default)]
 pub struct Store {
     docs: RwLock<BTreeMap<String, Value>>,
+    /// Dashboard opened at `/` (like HA's default dashboard).
+    default: RwLock<Option<String>>,
 }
 
 impl Store {
@@ -89,6 +91,23 @@ impl Store {
         let summary = Summary::of(&doc);
         self.write().insert(key, doc);
         Some(summary)
+    }
+
+    /// The default dashboard, if it still exists.
+    pub fn default_dashboard(&self) -> Option<String> {
+        let d = self
+            .default
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()?;
+        self.contains(&d).then_some(d)
+    }
+
+    pub fn set_default(&self, url_path: Option<String>) {
+        *self
+            .default
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = url_path;
     }
 
     pub fn remove(&self, url_path: &str) -> bool {
@@ -134,6 +153,18 @@ mod tests {
     use serde_json::json;
 
     use super::*;
+
+    #[test]
+    fn default_dashboard_must_exist() {
+        let store = Store::new();
+        store.put(json!({ "url_path": "apercu-3", "views": [] }));
+        store.set_default(Some("apercu-3".into()));
+        assert_eq!(store.default_dashboard().as_deref(), Some("apercu-3"));
+        store.remove("apercu-3");
+        assert_eq!(store.default_dashboard(), None);
+        store.set_default(None);
+        assert_eq!(store.default_dashboard(), None);
+    }
 
     #[test]
     fn url_paths() {

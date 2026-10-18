@@ -1,5 +1,5 @@
 <script lang="ts">
-	// Réglages du tableau de bord : titre, icône, menu latéral, kiosque, accès.
+	// Réglages du tableau de bord : titre, icône, onglets, menu latéral, kiosque, accès.
 	import Icon from '../Icon.svelte';
 	import { iconPath, UI } from '../icons';
 	import type { DashboardDoc } from '../model';
@@ -20,6 +20,8 @@
 	let sidebar = $state(doc.show_in_sidebar !== false);
 	// svelte-ignore state_referenced_locally
 	let kiosk = $state(doc.kiosk === true);
+	// svelte-ignore state_referenced_locally
+	let iconTabs = $state(doc.tabs_icon_only === true);
 	// svelte-ignore state_referenced_locally
 	let adminOnly = $state(doc.require_admin === true);
 </script>
@@ -47,6 +49,10 @@
 			><input type="checkbox" bind:checked={sidebar} />Afficher dans le menu latéral</label
 		>
 		<label class="check"
+			><input type="checkbox" bind:checked={iconTabs} />Onglets : icône seule, sans le titre (pour
+			les vues qui ont une icône ; le titre reste en info-bulle)</label
+		>
+		<label class="check"
 			><input type="checkbox" bind:checked={kiosk} />Mode kiosque : sans menu ni en-tête (tablette
 			murale)</label
 		>
@@ -65,6 +71,7 @@
 					icon: icon.trim() || undefined,
 					show_in_sidebar: sidebar,
 					kiosk: kiosk || undefined,
+					tabs_icon_only: iconTabs || undefined,
 					require_admin: adminOnly || undefined
 				})}>Enregistrer</button
 		>
